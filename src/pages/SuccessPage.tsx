@@ -3,17 +3,9 @@ import { Box, Container, Typography, Paper, Button } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useNavigate } from 'react-router-dom';
+import { SuccessPageContent } from '../features/ui/types';
 
-interface SuccessPageContent {
-  title: string;
-  description: string;
-  mainMessage: string;
-  subMessage: string;
-  referenceNumber: string;
-  nextSteps: string;
-  nextStepsList: string[];
-  backToHome: string;
-}
+
 
 const SuccessPage: React.FC = () => {
   const { t } = useTranslation();
