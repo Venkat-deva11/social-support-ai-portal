@@ -46,11 +46,11 @@ export type AIAuthoringField = 'financialSituation' | 'employmentCircumstances' 
 const getSystemPrompt = (field: AIAuthoringField): string => {
   const prompts = {
     financialSituation:
-      'You are a helpful assistant helping a government social support applicant describe their financial situation. Write a clear, respectful, and professional paragraph (50-200 words) that describes financial hardship. Focus on factual description of income, expenses, debts, and challenges without exaggeration or emotional manipulation.',
+      'You are a helpful assistant helping a government social support applicant describe their current financial situation. Write a clear, respectful, and professional paragraph (50-200 words) that describes financial hardship. Focus on factual description of income, expenses, debts, and challenges without exaggeration or emotional manipulation.',
     employmentCircumstances:
       'You are a helpful assistant helping a government social support applicant describe their employment circumstances. Write a clear, respectful, and professional paragraph (50-200 words) that describes their employment status, work history, and any job-related challenges. Be factual and professional.',
     reasonForApplying:
-      'You are a helpful assistant helping a government social support applicant explain why they need financial assistance. Write a clear, respectful, and professional paragraph (50-200 words) that explains their situation and why they are seeking help. Focus on genuine need without exaggeration.',
+      'You are a helpful assistant helping a government social support applicant (Reason For Applying) explain why they need financial assistance. Write a clear, respectful, and professional paragraph (50-200 words) that explains their situation and why they are seeking help. Focus on genuine need without exaggeration.',
   };
 
   return prompts[field];
@@ -93,7 +93,7 @@ export const OpenAIService = {
     existingContext?: string
   ): Promise<ApiResponse<string>> => {
     // Check if API key is configured
-    if (!API_KEY || API_KEY === 'your_openai_api_key_here') {
+    if (!API_KEY || API_KEY === '') {
       return {
         success: false,
         error: 'OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in your environment.',

@@ -51,7 +51,9 @@ const ApplicationWizard: React.FC = () => {
   } = useSelector((state: RootState) => state.application);
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const prevStepRef = useRef(currentStep);
+  const wasResetRef = useRef(false);
 
   // Refs for each form to trigger validation
   const personalInfoRef = useRef<PersonalInfoFormRef>(null);
@@ -77,20 +79,45 @@ const ApplicationWizard: React.FC = () => {
   useEffect(() => {
     const savedApp = StorageService.loadApplication();
     if (savedApp) {
-      dispatch(
-        restoreApplication({
-          currentStep: savedApp.currentStep,
-          formData: savedApp.formData,
-          language: savedApp.language,
-        })
-      );
+      // Small delay to ensure store is ready
+      setTimeout(() => {
+        dispatch(
+          restoreApplication({
+            currentStep: savedApp.currentStep,
+            formData: savedApp.formData,
+            language: savedApp.language,
+          })
+        );
+      }, 0);
     }
   }, [dispatch]);
 
   // Auto-save on step change
   useEffect(() => {
-    StorageService.saveApplication(currentStep, formData, language);
+    // Skip saving if we just reset
+    if (wasResetRef.current) {
+      wasResetRef.current = false;
+      return;
+    }
+    // Debounce to avoid rapid saves
+    const timeoutId = setTimeout(() => {
+      StorageService.saveApplication(currentStep, formData, language);
+    }, 500);
+    return () => clearTimeout(timeoutId);
   }, [currentStep, formData, language]);
+
+  // Force form re-render when formData is reset (from clear)
+  useEffect(() => {
+    if (formData.personalInfo.fullName === '' &&
+        formData.familyFinancialInfo.maritalStatus === '' &&
+        formData.situationDescriptions.financialSituation === '' &&
+        currentStep === 1 &&
+        StorageService.loadApplication() === null) {
+      // Form was reset and no data in storage - remount forms
+      setResetKey(prev => prev + 1);
+      wasResetRef.current = true;
+    }
+  }, [formData, currentStep]);
 
   // Reset refs when step changes
   useEffect(() => {
@@ -132,7 +159,9 @@ const ApplicationWizard: React.FC = () => {
         if (error.inner && Array.isArray(error.inner)) {
           // Show first error as toast (for user feedback)
           if (error.inner.length > 0) {
-            toast.error(error.inner[0].message);
+            toast.error(error.inner[0].message, {
+              position: 'bottom-right',
+            });
           }
         }
         return false;
@@ -217,11 +246,11 @@ const ApplicationWizard: React.FC = () => {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case STEPS.PERSONAL_INFO:
-        return <PersonalInfoForm ref={personalInfoRef} />;
+        return <PersonalInfoForm key={resetKey} ref={personalInfoRef} />;
       case STEPS.FAMILY_FINANCIAL:
-        return <FamilyFinancialForm ref={familyFinancialRef} />;
+        return <FamilyFinancialForm key={resetKey} ref={familyFinancialRef} />;
       case STEPS.SITUATION_DESCRIPTIONS:
-        return <SituationDescriptionsForm ref={situationDescriptionsRef} />;
+        return <SituationDescriptionsForm key={resetKey} ref={situationDescriptionsRef} />;
       default:
         return null;
     }

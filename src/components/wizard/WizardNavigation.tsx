@@ -54,7 +54,7 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
     document.documentElement.dir = 'ltr';
     document.documentElement.lang = 'en';
     toast.success(t('common.clearedSuccessfully'), {
-      position: 'top-center',
+      position: 'bottom-right',
       autoClose: 3000,
     });
     navigate('/');

@@ -51,6 +51,7 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
     watch,
     setValue,
     trigger,
+    reset,
   } = useForm<SituationDescriptionsFormData>({
     resolver: yupResolver(situationDescriptionsSchema) as any,
     mode: 'onChange',
@@ -65,6 +66,22 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
   });
 
   const watchedValues = watch();
+
+  // Sync form with Redux state when data is restored from localStorage
+  // This handles the case where Redux store is rehydrated on page refresh
+  const [hasSynced, setHasSynced] = React.useState(false);
+
+  useEffect(() => {
+    // Only sync once when formData has actual values (restored from localStorage)
+    // and we haven't synced yet
+    if (hasSynced) return;
+
+    const hasStoredData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+    if (hasStoredData) {
+      reset(formData);
+      setHasSynced(true);
+    }
+  }, [formData, reset, hasSynced]);
 
   // Expose triggerValidation to parent
   useImperativeHandle(ref, () => ({

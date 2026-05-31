@@ -17,11 +17,19 @@ import { setLanguage } from '../../features/application/applicationSlice';
 import { setRTL } from '../../features/ui/uiSlice';
 import i18n from '../../i18n';
 import { getLanguageDirection } from '../../utils/sitecoreContentHelper';
+import { STEPS } from '../../constants';
+
+const STEP_TITLES: Record<number, string> = {
+  [STEPS.PERSONAL_INFO]: 'pages.personalInformation.title',
+  [STEPS.FAMILY_FINANCIAL]: 'pages.familyFinancialInformation.title',
+  [STEPS.SITUATION_DESCRIPTIONS]: 'pages.situationDescriptions.title',
+};
 
 const Header: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const language = useSelector((state: RootState) => state.application.language);
+  const currentStep = useSelector((state: RootState) => state.application.currentStep);
 
   const handleLanguageChange = (event: { target: { value: unknown } }) => {
     const newLang = event.target.value as 'en' | 'ar';
@@ -33,6 +41,9 @@ const Header: React.FC = () => {
     document.documentElement.dir = getLanguageDirection(newLang);
     document.documentElement.lang = newLang;
   };
+
+  const currentPageTitle = STEP_TITLES[currentStep] || STEP_TITLES[STEPS.PERSONAL_INFO];
+
 
   return (
     <Box
@@ -77,7 +88,7 @@ const Header: React.FC = () => {
               {t('common.appName')}
             </Link>
             <Typography sx={{ color: 'inherit' }}>
-              {t('pages.personalInformation.title')}
+              {t(currentPageTitle)}
             </Typography>
           </Breadcrumbs>
         </Box>
