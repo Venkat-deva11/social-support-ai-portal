@@ -1,0 +1,512 @@
+{
+  "en": {
+    "common": {
+      "appName": "Social Support AI Portal",
+      "next": "Next",
+      "previous": "Previous",
+      "submit": "Submit Application",
+      "saveProgress": "Save Progress",
+      "clearSavedApplication": "Clear Saved Application",
+      "helpMeWrite": "Help Me Write",
+      "accept": "Accept",
+      "edit": "Edit",
+      "discard": "Discard",
+      "loading": "Loading...",
+      "error": "Error",
+      "success": "Success",
+      "retry": "Retry",
+      "close": "Close",
+      "yes": "Yes",
+      "no": "No",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "required": "Required",
+      "optional": "Optional",
+      "step": "Step",
+      "of": "of",
+      "applicationSubmitted": "Application Submitted Successfully",
+      "applicationSubmittedDescription": "Your application has been submitted. We will review it and contact you soon.",
+      "backToHome": "Back to Home",
+      "aiAssistanceTitle": "AI Writing Assistance",
+      "aiAssistanceDescription": "Our AI can help you write a description based on your situation.",
+      "generatingContent": "Generating content...",
+      "failedToGenerate": "Failed to generate content. Please try again.",
+      "noApiKey": "OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in your environment.",
+      "networkError": "Network error. Please check your connection.",
+      "timeoutError": "Request timed out. Please try again.",
+      "invalidResponse": "Received an invalid response from the server.",
+      "fieldRequired": "This field is required",
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPhone": "Please enter a valid phone number",
+      "minCharacters": "Minimum {{count}} characters required",
+      "maxCharacters": "Maximum {{count}} characters allowed",
+      "mustBe18": "Applicant must be 18 years or older",
+      "invalidDate": "Please enter a valid date",
+      "alphanumericRequired": "Only alphanumeric characters allowed",
+      "positiveNumberRequired": "Please enter a valid positive number",
+      "selectOption": "Select an option",
+      "enterValue": "Enter value",
+      "charactersRemaining": "{{count}} characters remaining",
+      "clearedSuccessfully": "Saved application cleared successfully",
+      "language": "Language"
+    },
+    "pages": {
+      "personalInformation": {
+        "componentId": "personal-information-page",
+        "title": "Personal Information",
+        "description": "Please provide your personal details to begin the application process.",
+        "sectionTitle": "Step 1: Personal Details",
+        "fields": {
+          "fullName": {
+            "label": "Full Name",
+            "placeholder": "Enter your full name",
+            "helperText": "As it appears on your national ID",
+            "errorMessage": {
+              "required": "Full name is required",
+              "minLength": "Full name must be at least 3 characters",
+              "maxLength": "Full name cannot exceed 100 characters"
+            }
+          },
+          "nationalId": {
+            "label": "National ID",
+            "placeholder": "Enter your national ID",
+            "helperText": "Your official government-issued identification number",
+            "errorMessage": {
+              "required": "National ID is required",
+              "minLength": "National ID must be at least 8 characters",
+              "maxLength": "National ID cannot exceed 20 characters",
+              "alphanumeric": "Only alphanumeric characters allowed"
+            }
+          },
+          "dateOfBirth": {
+            "label": "Date of Birth",
+            "placeholder": "Select your date of birth",
+            "helperText": "You must be 18 years or older to apply",
+            "errorMessage": {
+              "required": "Date of birth is required",
+              "invalid": "Please enter a valid date",
+              "minAge": "Applicant must be 18 years or older"
+            }
+          },
+          "gender": {
+            "label": "Gender",
+            "placeholder": "Select your gender",
+            "helperText": "",
+            "errorMessage": {
+              "required": "Gender is required"
+            }
+          },
+          "address": {
+            "label": "Address",
+            "placeholder": "Enter your full residential address",
+            "helperText": "Include street, building, apartment number if applicable",
+            "errorMessage": {
+              "required": "Address is required",
+              "minLength": "Address must be at least 10 characters"
+            }
+          },
+          "city": {
+            "label": "City",
+            "placeholder": "Enter your city",
+            "helperText": "",
+            "errorMessage": {
+              "required": "City is required"
+            }
+          },
+          "state": {
+            "label": "State/Province",
+            "placeholder": "Enter your state or province",
+            "helperText": "",
+            "errorMessage": {
+              "required": "State/Province is required"
+            }
+          },
+          "country": {
+            "label": "Country",
+            "placeholder": "Select your country",
+            "helperText": "",
+            "errorMessage": {
+              "required": "Country is required"
+            }
+          },
+          "phone": {
+            "label": "Phone Number",
+            "placeholder": "+1 234 567 8900",
+            "helperText": "Enter a valid international phone number",
+            "errorMessage": {
+              "required": "Phone number is required",
+              "invalid": "Please enter a valid phone number"
+            }
+          },
+          "email": {
+            "label": "Email Address",
+            "placeholder": "Enter your email address",
+            "helperText": "We will use this to contact you about your application",
+            "errorMessage": {
+              "required": "Email address is required",
+              "invalid": "Please enter a valid email address"
+            }
+          }
+        }
+      },
+      "familyFinancialInformation": {
+        "componentId": "family-financial-page",
+        "title": "Family & Financial Information",
+        "description": "Please provide information about your family and financial situation.",
+        "sectionTitle": "Step 2: Family & Financial Details",
+        "fields": {
+          "maritalStatus": {
+            "label": "Marital Status",
+            "placeholder": "Select your marital status",
+            "helperText": "",
+            "errorMessage": {
+              "required": "Marital status is required"
+            }
+          },
+          "dependents": {
+            "label": "Number of Dependents",
+            "placeholder": "Enter number of dependents",
+            "helperText": "Include children and other family members who rely on your income",
+            "errorMessage": {
+              "required": "Number of dependents is required",
+              "positive": "Please enter a valid number (0 or more)"
+            }
+          },
+          "employmentStatus": {
+            "label": "Employment Status",
+            "placeholder": "Select your employment status",
+            "helperText": "",
+            "errorMessage": {
+              "required": "Employment status is required"
+            }
+          },
+          "monthlyIncome": {
+            "label": "Monthly Income",
+            "placeholder": "Enter your monthly income",
+            "helperText": "Enter your total monthly income before taxes",
+            "errorMessage": {
+              "required": "Monthly income is required",
+              "positive": "Please enter a valid positive number"
+            }
+          },
+          "housingStatus": {
+            "label": "Housing Status",
+            "placeholder": "Select your housing status",
+            "helperText": "",
+            "errorMessage": {
+              "required": "Housing status is required"
+            }
+          }
+        }
+      },
+      "situationDescriptions": {
+        "componentId": "situation-description-page",
+        "title": "Situation Descriptions",
+        "description": "Please describe your current situation in detail. Our AI can help you write these sections.",
+        "sectionTitle": "Step 3: Describe Your Situation",
+        "fields": {
+          "financialSituation": {
+            "label": "Current Financial Situation",
+            "placeholder": "Describe your current financial situation...",
+            "helperText": "Include details about your income, expenses, debts, and any financial difficulties you are facing",
+            "errorMessage": {
+              "required": "Please describe your current financial situation",
+              "minLength": "Description must be at least 50 characters",
+              "maxLength": "Description cannot exceed 2000 characters"
+            }
+          },
+          "employmentCircumstances": {
+            "label": "Employment Circumstances",
+            "placeholder": "Describe your employment circumstances...",
+            "helperText": "Include details about your employment history, current status, and any job-related challenges",
+            "errorMessage": {
+              "required": "Please describe your employment circumstances",
+              "minLength": "Description must be at least 50 characters",
+              "maxLength": "Description cannot exceed 2000 characters"
+            }
+          },
+          "reasonForApplying": {
+            "label": "Reason For Applying",
+            "placeholder": "Explain why you are applying for assistance...",
+            "helperText": "Include details about why you need financial assistance and how it will help you",
+            "errorMessage": {
+              "required": "Please explain your reason for applying",
+              "minLength": "Description must be at least 50 characters",
+              "maxLength": "Description cannot exceed 2000 characters"
+            }
+          }
+        }
+      },
+      "applicationSuccess": {
+        "componentId": "success-page",
+        "title": "Application Submitted Successfully",
+        "description": "Your application has been received and will be reviewed by our team.",
+        "mainMessage": "Thank you for submitting your application",
+        "subMessage": "We have sent a confirmation to your email. Our team will review your application and contact you within 5-7 business days.",
+        "referenceNumber": "Reference Number",
+        "nextSteps": "What happens next",
+        "nextStepsList": [
+          "Our team will review your application",
+          "We may contact you for additional information",
+          "You will receive updates on your application status via email"
+        ],
+        "backToHome": "Return to Home"
+      }
+    }
+  },
+  "ar": {
+    "common": {
+      "appName": "بوابة الدعم الاجتماعي بالذكاء الاصطناعي",
+      "next": "التالي",
+      "previous": "السابق",
+      "submit": "إرسال الطلب",
+      "saveProgress": "حفظ التقدم",
+      "clearSavedApplication": "مسح الطلب المحفوظ",
+      "helpMeWrite": "ساعدني في الكتابة",
+      "accept": "قبول",
+      "edit": "تعديل",
+      "discard": "تجاهل",
+      "loading": "جارٍ التحميل...",
+      "error": "خطأ",
+      "success": "نجاح",
+      "retry": "إعادة المحاولة",
+      "close": "إغلاق",
+      "yes": "نعم",
+      "no": "لا",
+      "confirm": "تأكيد",
+      "cancel": "إلغاء",
+      "required": "مطلوب",
+      "optional": "اختياري",
+      "step": "الخطوة",
+      "of": "من",
+      "applicationSubmitted": "تم إرسال الطلب بنجاح",
+      "applicationSubmittedDescription": "تم إرسال طلبك. سنراجعه ونتواصل معك قريباً.",
+      "backToHome": "العودة للرئيسية",
+      "aiAssistanceTitle": "مساعدة الكتابة بالذكاء الاصطناعي",
+      "aiAssistanceDescription": "يمكن للذكاء الاصطناعي مساعدتك في كتابة وصف بناءً على وضعك.",
+      "generatingContent": "جارٍ توليد المحتوى...",
+      "failedToGenerate": "فشل في توليد المحتوى. يرجى المحاولة مرة أخرى.",
+      "noApiKey": "لم يتم تكوين مفتاح OpenAI API. يرجى تعيين VITE_OPENAI_API_KEY في البيئة الخاصة بك.",
+      "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+      "timeoutError": "انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.",
+      "invalidResponse": "تم استلام استجابة غير صالحة من الخادم.",
+      "fieldRequired": "هذا الحقل مطلوب",
+      "invalidEmail": "يرجى إدخال بريد إلكتروني صالح",
+      "invalidPhone": "يرجى إدخال رقم هاتف صالح",
+      "minCharacters": "مطلوب {{count}} أحرف على الأقل",
+      "maxCharacters": " الحد الأقصى {{count}} أحرف",
+      "mustBe18": "يجب أن يكون عمر المتقدم 18 سنة أو أكثر",
+      "invalidDate": "يرجى إدخال تاريخ صالح",
+      "alphanumericRequired": "يسمح فقط بالأحرف والأرقام",
+      "positiveNumberRequired": "يرجى إدخال رقم موجب صالح",
+      "selectOption": "اختر خياراً",
+      "enterValue": "أدخل قيمة",
+      "charactersRemaining": "{{count}} أحرف متبقية",
+      "clearedSuccessfully": "تم مسح الطلب المحفوظ بنجاح",
+      "language": "اللغة"
+    },
+    "pages": {
+      "personalInformation": {
+        "componentId": "personal-information-page",
+        "title": "المعلومات الشخصية",
+        "description": "يرجى تقديم تفاصيلك الشخصية لبدء عملية التقديم.",
+        "sectionTitle": "الخطوة 1: التفاصيل الشخصية",
+        "fields": {
+          "fullName": {
+            "label": "الاسم الكامل",
+            "placeholder": "أدخل اسمك الكامل",
+            "helperText": "كما يظهر في هويتك الوطنية",
+            "errorMessage": {
+              "required": "الاسم الكامل مطلوب",
+              "minLength": "يجب أن يكون الاسم الكامل 3 أحرف على الأقل",
+              "maxLength": "لا يمكن أن يتجاوز الاسم الكامل 100 حرف"
+            }
+          },
+          "nationalId": {
+            "label": "رقم الهوية الوطنية",
+            "placeholder": "أدخل رقم هويتك الوطنية",
+            "helperText": "رقم التعريف الصادر عن الحكومة",
+            "errorMessage": {
+              "required": "رقم الهوية الوطنية مطلوب",
+              "minLength": "يجب أن يكون رقم الهوية الوطنية 8 أحرف على الأقل",
+              "maxLength": "لا يمكن أن يتجاوز رقم الهوية الوطنية 20 حرفاً",
+              "alphanumeric": "يسمح فقط بالأحرف والأرقام"
+            }
+          },
+          "dateOfBirth": {
+            "label": "تاريخ الميلاد",
+            "placeholder": "اختر تاريخ ميلادك",
+            "helperText": "يجب أن يكون عمرك 18 سنة أو أكثر للتقديم",
+            "errorMessage": {
+              "required": "تاريخ الميلاد مطلوب",
+              "invalid": "يرجى إدخال تاريخ صالح",
+              "minAge": "يجب أن يكون عمر المتقدم 18 سنة أو أكثر"
+            }
+          },
+          "gender": {
+            "label": "الجنس",
+            "placeholder": "اختر جنسك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "الجنس مطلوب"
+            }
+          },
+          "address": {
+            "label": "العنوان",
+            "placeholder": "أدخل عنوان سكنك الكامل",
+            "helperText": "تضمن الشارع والمبنى ورقم الشقة إن أمكن",
+            "errorMessage": {
+              "required": "العنوان مطلوب",
+              "minLength": "يجب أن يكون العنوان 10 أحرف على الأقل"
+            }
+          },
+          "city": {
+            "label": "المدينة",
+            "placeholder": "أدخل مدينتك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "المدينة مطلوبة"
+            }
+          },
+          "state": {
+            "label": "الولاية/المحافظة",
+            "placeholder": "أدخل ولايتك أو محافظتك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "الولاية/المحافظة مطلوبة"
+            }
+          },
+          "country": {
+            "label": "الدولة",
+            "placeholder": "اختر دولتك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "الدولة مطلوبة"
+            }
+          },
+          "phone": {
+            "label": "رقم الهاتف",
+            "placeholder": "+966 12 345 6789",
+            "helperText": "أدخل رقم هاتف دولي صالح",
+            "errorMessage": {
+              "required": "رقم الهاتف مطلوب",
+              "invalid": "يرجى إدخال رقم هاتف صالح"
+            }
+          },
+          "email": {
+            "label": "البريد الإلكتروني",
+            "placeholder": "أدخل بريدك الإلكتروني",
+            "helperText": "سنستخدم هذا للتواصل معك بشأن طلبك",
+            "errorMessage": {
+              "required": "البريد الإلكتروني مطلوب",
+              "invalid": "يرجى إدخال بريد إلكتروني صالح"
+            }
+          }
+        }
+      },
+      "familyFinancialInformation": {
+        "componentId": "family-financial-page",
+        "title": "المعلومات العائلية والمالية",
+        "description": "يرجى تقديم معلومات عن وضعك العائلي والمالي.",
+        "sectionTitle": "الخطوة 2: التفاصيل العائلية والمالية",
+        "fields": {
+          "maritalStatus": {
+            "label": "الحالة الاجتماعية",
+            "placeholder": "اختر حالتك الاجتماعية",
+            "helperText": "",
+            "errorMessage": {
+              "required": "الحالة الاجتماعية مطلوبة"
+            }
+          },
+          "dependents": {
+            "label": "عدد المعالين",
+            "placeholder": "أدخل عدد المعالين",
+            "helperText": "أدخل الأطفال وغيرهم من أفراد الأسرة الذين يعتمدون على دخلك",
+            "errorMessage": {
+              "required": "عدد المعالين مطلوب",
+              "positive": "يرجى إدخال رقم صالح (0 أو أكثر)"
+            }
+          },
+          "employmentStatus": {
+            "label": "حالة التوظيف",
+            "placeholder": "اختر حالة توظيفك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "حالة التوظيف مطلوبة"
+            }
+          },
+          "monthlyIncome": {
+            "label": "الدخل الشهري",
+            "placeholder": "أدخل دخلك الشهري",
+            "helperText": "أدخل إجمالي دخلك الشهري قبل الضرائب",
+            "errorMessage": {
+              "required": "الدخل الشهري مطلوب",
+              "positive": "يرجى إدخال رقم موجب صالح"
+            }
+          },
+          "housingStatus": {
+            "label": "حالة السكن",
+            "placeholder": "اختر حالة سكنك",
+            "helperText": "",
+            "errorMessage": {
+              "required": "حالة السكن مطلوبة"
+            }
+          }
+        }
+      },
+      "situationDescriptions": {
+        "componentId": "situation-description-page",
+        "title": "وصف الوضع",
+        "description": "يرجى وصف وضعك الحالي بالتفصيل. يمكن للذكاء الاصطناعي مساعدتك في كتابة هذه الأقسام.",
+        "sectionTitle": "الخطوة 3: صف وضعك",
+        "fields": {
+          "financialSituation": {
+            "label": "الوضع المالي الحالي",
+            "placeholder": "صف وضعك المالي الحالي...",
+            "helperText": "تضمن تفاصيل دخلك ومصروفاتك وديونك وأي صعوبات مالية تواجهك",
+            "errorMessage": {
+              "required": "يرجى وصف وضعك المالي الحالي",
+              "minLength": "يجب أن يكون الوصف 50 حرفاً على الأقل",
+              "maxLength": "لا يمكن أن يتجاوز الوصف 2000 حرف"
+            }
+          },
+          "employmentCircumstances": {
+            "label": "ظروف التوظيف",
+            "placeholder": "صف ظروف توظيفك...",
+            "helperText": "تضمن تفاصيل سجل التوظيف وحالتك الحالية وأي تحديات متعلقة بالعمل",
+            "errorMessage": {
+              "required": "يرجى وصف ظروف توظيفك",
+              "minLength": "يجب أن يكون الوصف 50 حرفاً على الأقل",
+              "maxLength": "لا يمكن أن يتجاوز الوصف 2000 حرف"
+            }
+          },
+          "reasonForApplying": {
+            "label": "سبب التقديم",
+            "placeholder": "اشرح لماذا تطلب المساعدة...",
+            "helperText": "تضمن تفاصيل لماذا تحتاج المساعدة المالية وكيف ستساعدك",
+            "errorMessage": {
+              "required": "يرجى شرح سبب تقديمك",
+              "minLength": "يجب أن يكون الوصف 50 حرفاً على الأقل",
+              "maxLength": "لا يمكن أن يتجاوز الوصف 2000 حرف"
+            }
+          }
+        }
+      },
+      "applicationSuccess": {
+        "componentId": "success-page",
+        "title": "تم إرسال الطلب بنجاح",
+        "description": "تم استلام طلبك وسيتم مراجعته من قبل فريقنا.",
+        "mainMessage": "شكراً لك على تقديم طلبك",
+        "subMessage": "لقد أرسلنا تأكيداً إلى بريدك الإلكتروني. سيراجع فريقنا طلبك وسيتواصل معك خلال 5-7 أيام عمل.",
+        "referenceNumber": "رقم المرجع",
+        "nextSteps": "الخطوات التالية",
+        "nextStepsList": [
+          "سيراجع فريقنا طلبك",
+          "قد نتواصل معك للحصول على معلومات إضافية",
+          "ستتلقى تحديثات حول حالة طلبك عبر البريد الإلكتروني"
+        ],
+        "backToHome": "العودة للرئيسية"
+      }
+    }
+  }
+}

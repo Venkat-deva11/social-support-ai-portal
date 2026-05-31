@@ -1,0 +1,133 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Box,
+  Typography,
+  Breadcrumbs,
+  Link,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@mui/material';
+import LanguageIcon from '@mui/icons-material/Language';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../app/store';
+import { setLanguage } from '../../features/application/applicationSlice';
+import { setRTL } from '../../features/ui/uiSlice';
+import i18n from '../../i18n';
+import { getLanguageDirection } from '../../utils/sitecoreContentHelper';
+
+const Header: React.FC = () => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const language = useSelector((state: RootState) => state.application.language);
+
+  const handleLanguageChange = (event: { target: { value: unknown } }) => {
+    const newLang = event.target.value as 'en' | 'ar';
+    dispatch(setLanguage(newLang));
+    dispatch(setRTL(newLang === 'ar'));
+    i18n.changeLanguage(newLang);
+
+    // Update document direction
+    document.documentElement.dir = getLanguageDirection(newLang);
+    document.documentElement.lang = newLang;
+  };
+
+  return (
+    <Box
+      component="header"
+      sx={{
+        backgroundColor: 'primary.main',
+        color: 'primary.contrastText',
+        py: 2,
+        px: 3,
+        boxShadow: 2,
+      }}
+      role="banner"
+    >
+      <Box
+        sx={{
+          maxWidth: 1200,
+          mx: 'auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
+            {t('common.appName')}
+          </Typography>
+          <Breadcrumbs
+            aria-label="breadcrumb"
+            sx={{
+              '& .MuiBreadcrumbs-separator': { color: 'inherit' },
+              '& .MuiTypography-root': { color: 'inherit' },
+            }}
+          >
+            <Link
+              href="#"
+              underline="hover"
+              sx={{ color: 'inherit' }}
+              aria-label="Home"
+            >
+              {t('common.appName')}
+            </Link>
+            <Typography sx={{ color: 'inherit' }}>
+              {t('pages.personalInformation.title')}
+            </Typography>
+          </Breadcrumbs>
+        </Box>
+
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel
+            id="language-select-label"
+            sx={{ color: 'inherit', '&.Mui-focused': { color: 'inherit' } }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <LanguageIcon fontSize="small" />
+              {t('common.language')}
+            </Box>
+          </InputLabel>
+          <Select
+            labelId="language-select-label"
+            id="language-select"
+            value={language}
+            onChange={handleLanguageChange}
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <LanguageIcon fontSize="small" />
+                {t('common.language')}
+              </Box>
+            }
+            sx={{
+              color: 'inherit',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'rgba(255,255,255,0.5)',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'white',
+              },
+              '& .MuiSvgIcon-root': {
+                color: 'inherit',
+              },
+            }}
+            slotProps={{
+              input: {
+                'aria-label': t('common.language'),
+              },
+            }}
+          >
+            <MenuItem value="en">English</MenuItem>
+            <MenuItem value="ar">العربية</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+    </Box>
+  );
+};
+
+export default Header;
