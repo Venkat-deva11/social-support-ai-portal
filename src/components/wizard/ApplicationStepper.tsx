@@ -3,20 +3,22 @@ import { Box, Stepper, Step, StepLabel, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { STEPS } from '../../constants';
 import { useSitecoreContent } from '../../hooks/useSitecoreContent';
+import { isNotEmptyArray } from '../../utils/common';
+import type { ApplicationStepperProps } from './types';
 
-interface ApplicationStepperProps {
-  activeStep: number;
-}
+const STEPS_CONFIG = [
+  { labelKey: 'pages.personalInformation.title', componentId: 'personal-info-step' },
+  { labelKey: 'pages.familyFinancialInformation.title', componentId: 'family-financial-step' },
+  { labelKey: 'pages.situationDescriptions.title', componentId: 'situation-description-step' },
+];
 
+/**
+ * Application Stepper Component
+ * Displays progress through the application wizard steps
+ */
 const ApplicationStepper: React.FC<ApplicationStepperProps> = ({ activeStep }) => {
   const { t } = useTranslation();
-  const content = useSitecoreContent('application-stepper');
-
-  const steps = [
-    { label: t('pages.personalInformation.title'), componentId: 'personal-info-step' },
-    { label: t('pages.familyFinancialInformation.title'), componentId: 'family-financial-step' },
-    { label: t('pages.situationDescriptions.title'), componentId: 'situation-description-step' },
-  ];
+  useSitecoreContent('application-stepper'); // Preload content
 
   return (
     <Box
@@ -32,22 +34,24 @@ const ApplicationStepper: React.FC<ApplicationStepperProps> = ({ activeStep }) =
         alternativeLabel
         aria-label={`${t('common.step')} ${activeStep} ${t('common.of')} 3`}
       >
-        {steps.map((step, index) => (
-          <Step
-            key={step.componentId}
-            completed={activeStep > index + 1}
-            aria-label={step.label}
-          >
-            <StepLabel>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: activeStep === index + 1 ? 600 : 400 }}
+        {isNotEmptyArray(STEPS_CONFIG)
+          ? STEPS_CONFIG.map((step, index) => (
+              <Step
+                key={step.componentId}
+                completed={activeStep > index + 1}
+                aria-label={t(step.labelKey)}
               >
-                {step.label}
-              </Typography>
-            </StepLabel>
-          </Step>
-        ))}
+                <StepLabel>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: activeStep === index + 1 ? 600 : 400 }}
+                  >
+                    {t(step.labelKey)}
+                  </Typography>
+                </StepLabel>
+              </Step>
+            ))
+          : null}
       </Stepper>
     </Box>
   );

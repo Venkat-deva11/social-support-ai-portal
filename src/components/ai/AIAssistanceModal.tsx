@@ -16,19 +16,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
-import type { AIAuthoringField } from '../../services/openai/openaiService';
+import { OpenAIService } from '../../services/openai/openaiService';
+import { isNotEmptyString } from '../../utils/common';
+import type { AIAssistanceModalProps } from './types';
 
-interface AIAssistanceModalProps {
-  open: boolean;
-  onClose: () => void;
-  field: AIAuthoringField;
-  fieldLabel: string;
-  existingContent?: string;
-  onAccept: (content: string) => void;
-  placeholder?: string;
-  helperText?: string;
-}
-
+/**
+ * AI Assistance Modal Component
+ * Provides AI-generated text assistance for form fields
+ */
 const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
   open,
   onClose,
@@ -40,18 +35,17 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
   helperText,
 }) => {
   const { t } = useTranslation();
-  const [generatedContent, setGeneratedContent] = useState<string>('');
-  const [editedContent, setEditedContent] = useState<string>('');
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [editedContent, setEditedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [showEditor, setShowEditor] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Get user data from Redux state for contextual AI assistance
   const userData = useSelector((state: RootState) => ({
-    personalInfo: state.application.formData.personalInfo,
-    familyFinancialInfo: state.application.formData.familyFinancialInfo,
+    personalInfo: state?.application?.formData?.personalInfo,
+    familyFinancialInfo: state?.application?.formData?.familyFinancialInfo,
   }));
 
   // Reset state when modal opens
@@ -72,25 +66,23 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
     setGeneratedContent('');
     setShowEditor(false);
 
-    // Create abort controller for timeout handling
     abortControllerRef.current = new AbortController();
 
-    // Pass only familyFinancialInfo from Redux - no stale existingContent
     const result = await OpenAIService.generateText(
       field,
-      userData.familyFinancialInfo
+      userData?.familyFinancialInfo
     );
 
     setIsGenerating(false);
 
-    if (result.success && result.data) {
-      setGeneratedContent(result.data);
-      setEditedContent(result.data);
+    if (result?.success && isNotEmptyString(result?.data)) {
+      setGeneratedContent(result.data as string);
+      setEditedContent(result.data as string);
       setShowEditor(true);
     } else {
-      setError(result.error || t('common.failedToGenerate'));
+      setError(result?.error ?? t('common.failedToGenerate'));
     }
-  }, [field, userData.familyFinancialInfo, t]);
+  }, [field, userData?.familyFinancialInfo, t]);
 
   const handleCancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -101,8 +93,10 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
 
   const handleAccept = useCallback(() => {
     const contentToAccept = isEditing ? editedContent : generatedContent;
-    onAccept(contentToAccept);
-    onClose();
+    if (isNotEmptyString(contentToAccept)) {
+      onAccept(contentToAccept);
+      onClose();
+    }
   }, [isEditing, editedContent, generatedContent, onAccept, onClose]);
 
   const handleEdit = useCallback(() => {
@@ -118,7 +112,8 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
 
   const handleContentChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setEditedContent(event.target.value);
+      const value = event?.target?.value ?? '';
+      setEditedContent(value);
     },
     []
   );
@@ -220,7 +215,7 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
             )}
 
             <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
-              {editedContent.length} / 2000 characters
+              {editedContent?.length ?? 0} / 2000 characters
             </Typography>
           </Box>
         )}
@@ -259,8 +254,5 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
     </Dialog>
   );
 };
-
-// Import OpenAIService at the bottom to avoid circular dependency
-import { OpenAIService } from '../../services/openai/openaiService';
 
 export default AIAssistanceModal;

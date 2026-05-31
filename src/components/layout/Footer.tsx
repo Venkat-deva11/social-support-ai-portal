@@ -2,8 +2,13 @@ import React from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Footer Component
+ * Application footer with copyright and links
+ */
 const Footer: React.FC = () => {
   const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
 
   return (
     <Box
@@ -31,7 +36,7 @@ const Footer: React.FC = () => {
           }}
         >
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            © {new Date().getFullYear()} {t('common.appName')}. All rights reserved.
+            © {currentYear} {t('common.appName') ?? 'Social Support Application'}. All rights reserved.
           </Typography>
           <Box sx={{ display: 'flex', gap: 3 }}>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>

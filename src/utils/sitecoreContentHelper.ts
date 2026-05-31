@@ -1,41 +1,42 @@
-import type { SitecoreContent, SitecorePageContent } from '../types';
-import sitecoreContentData from '../content/sitecore.json';
-
 /**
- * Content helper for Sitecore-like CMS integration
- * Provides a unified interface for accessing localized content
+ * Sitecore Content Helper
+ * Provides utilities for accessing localized CMS content
  */
+
+import type { SitecoreContent, SitecorePageContent, Language } from '../types';
+import { isNotEmptyString, isNotNull } from './common';
+import sitecoreContentData from '../content/sitecore.json';
 
 // Cast the imported JSON to our typed structure
 const sitecoreContent = sitecoreContentData as unknown as SitecoreContent;
 
 /**
  * Get page content by component ID
- * Automatically returns content in the currently selected language
  */
 export function getPageContent(
   componentId: string,
-  language: 'en' | 'ar' = 'en'
+  language: Language = 'en'
 ): SitecorePageContent | null {
-  const langContent = sitecoreContent[language];
+  const langContent = sitecoreContent?.[language];
 
   if (!langContent) {
-    console.warn(`Language '${language}' not found in sitecore content`);
     return null;
   }
 
+  const pages = langContent?.pages;
+  if (!pages) return null;
+
   // Find the page content by componentId
-  const pages = langContent.pages;
-  const pageKey = Object.keys(pages).find(
-    (key) => pages[key as keyof typeof pages]?.componentId === componentId
+  const pageKeys = Object.keys(pages ?? {});
+  const pageKey = pageKeys.find(
+    (key) => pages?.[key]?.componentId === componentId
   );
 
   if (!pageKey) {
-    console.warn(`Component ID '${componentId}' not found in sitecore content`);
     return null;
   }
 
-  return pages[pageKey as keyof typeof pages];
+  return pages[pageKey] ?? null;
 }
 
 /**
@@ -43,21 +44,23 @@ export function getPageContent(
  */
 export function getCommonContent(
   key: string,
-  language: 'en' | 'ar' = 'en'
+  language: Language = 'en'
 ): string | null {
-  const langContent = sitecoreContent[language];
+  if (!isNotEmptyString(key)) return null;
 
-  if (!langContent) {
-    return null;
-  }
+  const langContent = sitecoreContent?.[language];
+  if (!langContent) return null;
 
-  return langContent.common[key] || null;
+  const common = langContent?.common;
+  if (!common) return null;
+
+  return common[key] ?? null;
 }
 
 /**
  * Get all available languages
  */
-export function getAvailableLanguages(): Array<{ code: 'en' | 'ar'; name: string }> {
+export function getAvailableLanguages(): Array<{ code: Language; name: string }> {
   return [
     { code: 'en', name: 'English' },
     { code: 'ar', name: 'العربية' },
@@ -67,7 +70,7 @@ export function getAvailableLanguages(): Array<{ code: 'en' | 'ar'; name: string
 /**
  * Get direction for a language
  */
-export function getLanguageDirection(language: 'en' | 'ar'): 'ltr' | 'rtl' {
+export function getLanguageDirection(language: Language): 'ltr' | 'rtl' {
   return language === 'ar' ? 'rtl' : 'ltr';
 }
 
@@ -76,7 +79,7 @@ export function getLanguageDirection(language: 'en' | 'ar'): 'ltr' | 'rtl' {
  */
 export function hasContent(
   componentId: string,
-  language: 'en' | 'ar' = 'en'
+  language: Language = 'en'
 ): boolean {
   return getPageContent(componentId, language) !== null;
 }
@@ -84,14 +87,21 @@ export function hasContent(
 /**
  * Get all page component IDs
  */
-export function getAllComponentIds(language: 'en' | 'ar' = 'en'): string[] {
-  const langContent = sitecoreContent[language];
+export function getAllComponentIds(language: Language = 'en'): string[] {
+  const langContent = sitecoreContent?.[language];
 
-  if (!langContent) {
-    return [];
-  }
+  if (!langContent) return [];
 
-  return Object.values(langContent.pages).map((page) => page.componentId);
+  const pages = langContent?.pages;
+  if (!pages) return [];
+
+  const pageValues = Object.values(pages);
+  if (!Array.isArray(pageValues) || pageValues.length === 0) return [];
+
+  return pageValues
+    .filter((page) => isNotNull(page))
+    .map((page) => page.componentId)
+    .filter(isNotEmptyString);
 }
 
 export default {

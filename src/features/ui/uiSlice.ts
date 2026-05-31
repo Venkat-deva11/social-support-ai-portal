@@ -1,10 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface UIState {
-  isRTL: boolean;
-  sidebarOpen: boolean;
-  theme: 'light' | 'dark';
-}
+import type { UIState } from './types';
 
 const initialState: UIState = {
   isRTL: false,

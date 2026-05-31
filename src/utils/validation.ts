@@ -1,9 +1,12 @@
+/**
+ * Validation Schemas
+ * Yup schemas for form validation
+ */
+
 import * as yup from 'yup';
 import { FORM_LIMITS } from '../constants';
 
-/**
- * Validation schema for Personal Information step
- */
+// Personal Information Schema
 export const personalInfoSchema = yup.object({
   fullName: yup
     .string()
@@ -15,7 +18,8 @@ export const personalInfoSchema = yup.object({
     .max(
       FORM_LIMITS.FULL_NAME_MAX,
       `Full name cannot exceed ${FORM_LIMITS.FULL_NAME_MAX} characters`
-    ),
+    )
+    .matches(/^[a-zA-Z0-9\s]+$/, 'Only alphanumeric characters allowed'),
 
   nationalId: yup
     .string()
@@ -80,9 +84,7 @@ export const personalInfoSchema = yup.object({
     .email('Please enter a valid email address'),
 });
 
-/**
- * Validation schema for Family & Financial Information step
- */
+// Family Financial Schema
 export const familyFinancialSchema = yup.object({
   maritalStatus: yup.string().required('Marital status is required'),
 
@@ -101,9 +103,7 @@ export const familyFinancialSchema = yup.object({
   housingStatus: yup.string().required('Housing status is required'),
 });
 
-/**
- * Validation schema for Situation Descriptions step
- */
+// Situation Descriptions Schema
 export const situationDescriptionsSchema = yup.object({
   financialSituation: yup
     .string()
@@ -142,9 +142,7 @@ export const situationDescriptionsSchema = yup.object({
     ),
 });
 
-/**
- * Type definitions for form validation
- */
+// Type exports inferred from schemas
 export type PersonalInfoFormData = yup.InferType<typeof personalInfoSchema>;
 export type FamilyFinancialFormData = yup.InferType<typeof familyFinancialSchema>;
 export type SituationDescriptionsFormData = yup.InferType<typeof situationDescriptionsSchema>;

@@ -1,86 +1,84 @@
-// Application Types
+/**
+ * Application Types - Barrel Export
+ * Re-exports all types from their respective modules
+ */
 
-export interface PersonalInfo {
-  fullName: string;
-  nationalId: string;
-  dateOfBirth: string;
-  gender: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  phone: string;
-  email: string;
-}
+// Re-export from features/application
+export type {
+  PersonalInfo,
+  FamilyFinancialInfo,
+  SituationDescriptions,
+  ApplicationFormData,
+  ApplicationState,
+  Language,
+  LanguageOption,
+  StoredApplication,
+} from '../features/application/types';
 
-export interface FamilyFinancialInfo {
-  maritalStatus: string;
-  dependents: number;
-  employmentStatus: string;
-  monthlyIncome: number;
-  housingStatus: string;
-}
+// Re-export from features/ui
+export type { UIState } from '../features/ui/types';
 
-export interface SituationDescriptions {
-  financialSituation: string;
-  employmentCircumstances: string;
-  reasonForApplying: string;
-}
+// Re-export from services/api
+export type {
+  ValidationError,
+  ApiResponse,
+  SubmissionData,
+  MockSubmissionResponse,
+} from '../services/api/types';
 
-export interface ApplicationFormData {
-  personalInfo: PersonalInfo;
-  familyFinancialInfo: FamilyFinancialInfo;
-  situationDescriptions: SituationDescriptions;
-}
+// Re-export from services/openai
+export type {
+  AIAuthoringField,
+  OpenAIMessage,
+  OpenAIRequest,
+  OpenAIChoice,
+  OpenAIResponse,
+  TokenUsage,
+  OpenAIConfigStatus,
+  GenerateTextResponse,
+} from '../services/openai/types';
 
-export interface ApplicationState {
-  currentStep: number;
-  formData: ApplicationFormData;
-  isSubmitted: boolean;
-  isSubmitting: boolean;
-  submitError: string | null;
-}
+// Re-export from sitecore types
+export type {
+  SitecoreField,
+  SitecorePageContent,
+  SitecoreLanguage,
+  SitecoreContent,
+  FieldConfig,
+} from './sitecore';
 
-export interface ValidationError {
-  message: string;
-  field?: string;
-}
+// Re-export from components/forms
+export type {
+  PersonalInfoFormRef,
+  PersonalInfoFormProps,
+  PersonalInfoFormData,
+  FamilyFinancialFormRef,
+  FamilyFinancialFormProps,
+  FamilyFinancialFormData,
+  SituationDescriptionsFormRef,
+  SituationDescriptionsFormProps,
+  SituationDescriptionsFormData,
+  FormFieldConfig,
+  FormValidationState,
+  FormStep,
+} from '../components/forms/types';
 
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+// Re-export from components/layout
+export type {
+  HeaderProps,
+  FooterProps,
+  LayoutChildrenProps,
+} from '../components/layout/types';
 
-export interface SitecoreField {
-  label: string;
-  placeholder?: string;
-  helperText?: string;
-  errorMessage?: string;
-}
+// Re-export from components/ai
+export type {
+  AIAssistanceModalProps,
+  UserData,
+} from '../components/ai/types';
 
-export interface SitecorePageContent {
-  componentId: string;
-  title: string;
-  description?: string;
-  fields: Record<string, SitecoreField | Record<string, SitecoreField>>;
-}
-
-export interface SitecoreContent {
-  en: {
-    pages: Record<string, SitecorePageContent>;
-    common: Record<string, string>;
-  };
-  ar: {
-    pages: Record<string, SitecorePageContent>;
-    common: Record<string, string>;
-  };
-}
-
-export type Language = 'en' | 'ar';
-
-export interface LanguageOption {
-  code: Language;
-  name: string;
-  direction: 'ltr' | 'rtl';
-}
+// Re-export from components/wizard
+export type {
+  ApplicationStepperProps,
+  WizardNavigationProps,
+  StepConfig,
+} from '../components/wizard/types';

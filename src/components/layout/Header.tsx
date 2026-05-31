@@ -25,25 +25,28 @@ const STEP_TITLES: Record<number, string> = {
   [STEPS.SITUATION_DESCRIPTIONS]: 'pages.situationDescriptions.title',
 };
 
+/**
+ * Header Component
+ * Application header with language selector and breadcrumbs
+ */
 const Header: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const language = useSelector((state: RootState) => state.application.language);
-  const currentStep = useSelector((state: RootState) => state.application.currentStep);
+  const language = useSelector((state: RootState) => state?.application?.language);
+  const currentStep = useSelector((state: RootState) => state?.application?.currentStep);
 
   const handleLanguageChange = (event: { target: { value: unknown } }) => {
-    const newLang = event.target.value as 'en' | 'ar';
-    dispatch(setLanguage(newLang));
-    dispatch(setRTL(newLang === 'ar'));
-    i18n.changeLanguage(newLang);
-
-    // Update document direction
-    document.documentElement.dir = getLanguageDirection(newLang);
-    document.documentElement.lang = newLang;
+    const newLang = event?.target?.value as 'en' | 'ar';
+    if (newLang) {
+      dispatch(setLanguage(newLang));
+      dispatch(setRTL(newLang === 'ar'));
+      i18n.changeLanguage(newLang);
+      document.documentElement.dir = getLanguageDirection(newLang);
+      document.documentElement.lang = newLang;
+    }
   };
 
-  const currentPageTitle = STEP_TITLES[currentStep] || STEP_TITLES[STEPS.PERSONAL_INFO];
-
+  const currentPageTitle = STEP_TITLES[currentStep] ?? STEP_TITLES[STEPS.PERSONAL_INFO];
 
   return (
     <Box
@@ -70,7 +73,7 @@ const Header: React.FC = () => {
       >
         <Box>
           <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
-            {t('common.appName')}
+            {t('common.appName') ?? 'Social Support Application'}
           </Typography>
           <Breadcrumbs
             aria-label="breadcrumb"
@@ -85,10 +88,10 @@ const Header: React.FC = () => {
               sx={{ color: 'inherit' }}
               aria-label="Home"
             >
-              {t('common.appName')}
+              {t('common.appName') ?? 'Social Support Application'}
             </Link>
             <Typography sx={{ color: 'inherit' }}>
-              {t(currentPageTitle)}
+              {t(currentPageTitle) ?? ''}
             </Typography>
           </Breadcrumbs>
         </Box>
@@ -100,18 +103,18 @@ const Header: React.FC = () => {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <LanguageIcon fontSize="small" />
-              {t('common.language')}
+              {t('common.language') ?? 'Language'}
             </Box>
           </InputLabel>
           <Select
             labelId="language-select-label"
             id="language-select"
-            value={language}
+            value={language ?? 'en'}
             onChange={handleLanguageChange}
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <LanguageIcon fontSize="small" />
-                {t('common.language')}
+                {t('common.language') ?? 'Language'}
               </Box>
             }
             sx={{
@@ -128,7 +131,7 @@ const Header: React.FC = () => {
             }}
             slotProps={{
               input: {
-                'aria-label': t('common.language'),
+                'aria-label': t('common.language') ?? 'Language',
               },
             }}
           >

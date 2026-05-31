@@ -3,7 +3,8 @@
  * Sanitizes context, builds user data context from Redux state, and optimizes prompts
  */
 
-import type { FamilyFinancialInfo } from '../types';
+import type { FamilyFinancialInfo, TokenUsage } from '../types';
+import { isNotEmptyString } from './common';
 
 // Maximum characters for context to prevent token overflow
 const MAX_CONTEXT_CHARS = 1000;
@@ -15,7 +16,7 @@ const MIN_CONTEXT_LENGTH = 30;
  * Sanitize user-provided context by removing common labels and normalizing whitespace
  */
 export const sanitizeContext = (text?: string): string => {
-  if (!text) return '';
+  if (!isNotEmptyString(text)) return '';
 
   return text
     // Remove common form labels that get repeated
@@ -31,24 +32,25 @@ export const sanitizeContext = (text?: string): string => {
  * Check if context is meaningful enough to send to AI
  */
 export const hasMeaningfulContext = (context?: string): boolean => {
-  return Boolean(context && context.trim().length > MIN_CONTEXT_LENGTH);
+  if (!isNotEmptyString(context)) return false;
+  return (context?.trim().length ?? 0) > MIN_CONTEXT_LENGTH;
 };
 
 /**
  * Build a context string from Redux user data for employment field
- * Set includeExistingContext=false when regenerating to avoid stale AI-generated content
  */
 export const buildEmploymentContextFromRedux = (
-  familyFinancialInfo: FamilyFinancialInfo,
+  familyFinancialInfo: FamilyFinancialInfo | undefined,
   existingContext?: string,
   includeExistingContext: boolean = true
 ): string => {
-  const { employmentStatus, monthlyIncome, housingStatus } = familyFinancialInfo;
+  if (!familyFinancialInfo) return '';
 
   const parts: string[] = [];
 
-  // Add factual data from Redux state - do NOT hallucinate
-  if (employmentStatus) {
+  const { employmentStatus, monthlyIncome, housingStatus } = familyFinancialInfo;
+
+  if (isNotEmptyString(employmentStatus)) {
     parts.push(`Employment Status: ${employmentStatus}`);
   }
 
@@ -56,13 +58,12 @@ export const buildEmploymentContextFromRedux = (
     parts.push(`Monthly Income: ${monthlyIncome}`);
   }
 
-  if (housingStatus) {
+  if (isNotEmptyString(housingStatus)) {
     parts.push(`Housing Status: ${housingStatus}`);
   }
 
   // Only include existing context when user hasn't changed their data
-  // This prevents stale AI-generated content (e.g., "retired") from being re-sent
-  if (includeExistingContext) {
+  if (includeExistingContext && isNotEmptyString(existingContext)) {
     const sanitizedExisting = sanitizeContext(existingContext);
     if (sanitizedExisting) {
       parts.push(`Additional context: ${sanitizedExisting}`);
@@ -76,15 +77,17 @@ export const buildEmploymentContextFromRedux = (
  * Build a context string from Redux user data for financial field
  */
 export const buildFinancialContextFromRedux = (
-  familyFinancialInfo: FamilyFinancialInfo,
+  familyFinancialInfo: FamilyFinancialInfo | undefined,
   existingContext?: string,
   includeExistingContext: boolean = true
 ): string => {
-  const { maritalStatus, dependents, monthlyIncome, housingStatus } = familyFinancialInfo;
+  if (!familyFinancialInfo) return '';
 
   const parts: string[] = [];
 
-  if (maritalStatus) {
+  const { maritalStatus, dependents, monthlyIncome, housingStatus } = familyFinancialInfo;
+
+  if (isNotEmptyString(maritalStatus)) {
     parts.push(`Marital Status: ${maritalStatus}`);
   }
 
@@ -96,14 +99,14 @@ export const buildFinancialContextFromRedux = (
     parts.push(`Monthly Income: ${monthlyIncome}`);
   }
 
-  if (housingStatus) {
+  if (isNotEmptyString(housingStatus)) {
     parts.push(`Housing Status: ${housingStatus}`);
   }
 
   // Only include existing context when user hasn't changed their data
-  if (includeExistingContext) {
+  if (includeExistingContext && isNotEmptyString(existingContext)) {
     const sanitizedExisting = sanitizeContext(existingContext);
-    if (sanitizedExisting) {
+    if (isNotEmptyString(sanitizedExisting)) {
       parts.push(`Additional context: ${sanitizedExisting}`);
     }
   }
@@ -115,15 +118,17 @@ export const buildFinancialContextFromRedux = (
  * Build a context string from Redux user data for reason for applying field
  */
 export const buildReasonContextFromRedux = (
-  familyFinancialInfo: FamilyFinancialInfo,
+  familyFinancialInfo: FamilyFinancialInfo | undefined,
   existingContext?: string,
   includeExistingContext: boolean = true
 ): string => {
-  const { employmentStatus, monthlyIncome } = familyFinancialInfo;
+  if (!familyFinancialInfo) return '';
 
   const parts: string[] = [];
 
-  if (employmentStatus) {
+  const { employmentStatus, monthlyIncome } = familyFinancialInfo;
+
+  if (isNotEmptyString(employmentStatus)) {
     parts.push(`Current Employment: ${employmentStatus}`);
   }
 
@@ -132,9 +137,9 @@ export const buildReasonContextFromRedux = (
   }
 
   // Only include existing context when user hasn't changed their data
-  if (includeExistingContext) {
+  if (includeExistingContext && isNotEmptyString(existingContext)) {
     const sanitizedExisting = sanitizeContext(existingContext);
-    if (sanitizedExisting) {
+    if (isNotEmptyString(sanitizedExisting)) {
       parts.push(`Additional details: ${sanitizedExisting}`);
     }
   }
@@ -146,7 +151,8 @@ export const buildReasonContextFromRedux = (
  * Truncate context to max characters
  */
 export const truncateContext = (context: string, maxChars: number = MAX_CONTEXT_CHARS): string => {
-  if (context.length <= maxChars) return context;
+  if (!isNotEmptyString(context)) return '';
+  if ((context?.length ?? 0) <= maxChars) return context;
   return context.slice(0, maxChars);
 };
 
@@ -157,28 +163,22 @@ export const buildOptimizedPrompt = (
   field: 'financialSituation' | 'employmentCircumstances' | 'reasonForApplying',
   context: string
 ): string => {
-  const fieldInstructions = {
+  const fieldInstructions: Record<string, string> = {
     financialSituation: 'Describe your current financial situation professionally.',
     employmentCircumstances: 'Describe your employment circumstances professionally.',
     reasonForApplying: 'Explain why you need financial assistance professionally.',
   };
 
-  if (!context) {
-    return fieldInstructions[field];
+  if (!isNotEmptyString(context)) {
+    return fieldInstructions[field] ?? fieldInstructions.reasonForApplying;
   }
 
-  return `Context: ${truncateContext(context)}\n\n${fieldInstructions[field]}`;
+  return `Context: ${truncateContext(context)}\n\n${fieldInstructions[field] ?? fieldInstructions.reasonForApplying}`;
 };
 
 /**
  * Parse and log token usage from OpenAI response
  */
-export interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-}
-
 export const parseTokenUsage = (usage?: {
   prompt_tokens: number;
   completion_tokens: number;
@@ -187,12 +187,15 @@ export const parseTokenUsage = (usage?: {
   if (!usage) return null;
 
   return {
-    promptTokens: usage.prompt_tokens,
-    completionTokens: usage.completion_tokens,
-    totalTokens: usage.total_tokens,
+    promptTokens: usage?.prompt_tokens ?? 0,
+    completionTokens: usage?.completion_tokens ?? 0,
+    totalTokens: usage?.total_tokens ?? 0,
   };
 };
 
+/**
+ * Log token usage from OpenAI response
+ */
 export const logTokenUsage = (usage?: {
   prompt_tokens: number;
   completion_tokens: number;

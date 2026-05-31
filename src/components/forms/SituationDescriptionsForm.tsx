@@ -11,9 +11,7 @@ import {
 import Grid from '@mui/material/Grid';
 import EditIcon from '@mui/icons-material/Edit';
 import { useTranslation } from 'react-i18next';
-import {
-  situationDescriptionsSchema,
-} from '../../utils/validation';
+import { situationDescriptionsSchema } from '../../utils/validation';
 import type { SituationDescriptionsFormData } from '../../utils/validation';
 import { FORM_LIMITS } from '../../constants';
 import { useSitecoreContent } from '../../hooks/useSitecoreContent';
@@ -21,23 +19,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updateSituationDescriptions } from '../../features/application/applicationSlice';
 import AIAssistanceModal from '../ai/AIAssistanceModal';
-import type { AIAuthoringField } from '../../services/openai/openaiService';
+import { isNotEmptyString } from '../../utils/common';
+import type { AIAuthoringField } from '../../services/openai/types';
+import type { SituationDescriptionsFormRef, SituationDescriptionsFormProps, FormFieldConfig } from './types';
 
-export interface SituationDescriptionsFormRef {
-  triggerValidation: () => Promise<boolean>;
-}
-
-interface SituationDescriptionsFormProps {
-  defaultValues?: Partial<SituationDescriptionsFormData>;
-}
-
+/**
+ * Situation Descriptions Form Component
+ * Handles situation description inputs with AI assistance
+ */
 const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, SituationDescriptionsFormProps>(({ defaultValues }, ref) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const content = useSitecoreContent('situation-description-page');
-  const formData = useSelector(
-    (state: RootState) => state.application.formData.situationDescriptions
-  );
+  const formData = useSelector((state: RootState) => state?.application?.formData?.situationDescriptions);
 
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [activeField, setActiveField] = useState<AIAuthoringField>('financialSituation');
@@ -56,48 +50,67 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
     resolver: yupResolver(situationDescriptionsSchema) as any,
     mode: 'onChange',
     defaultValues: {
-      financialSituation:
-        formData.financialSituation || defaultValues?.financialSituation || '',
-      employmentCircumstances:
-        formData.employmentCircumstances || defaultValues?.employmentCircumstances || '',
-      reasonForApplying:
-        formData.reasonForApplying || defaultValues?.reasonForApplying || '',
+      financialSituation: formData?.financialSituation ?? defaultValues?.financialSituation ?? '',
+      employmentCircumstances: formData?.employmentCircumstances ?? defaultValues?.employmentCircumstances ?? '',
+      reasonForApplying: formData?.reasonForApplying ?? defaultValues?.reasonForApplying ?? '',
     },
   });
 
   const watchedValues = watch();
 
-  // Sync form with Redux state when data is restored from localStorage
-  // This handles the case where Redux store is rehydrated on page refresh
   const [hasSynced, setHasSynced] = React.useState(false);
 
   useEffect(() => {
-    // Only sync once when formData has actual values (restored from localStorage)
-    // and we haven't synced yet
     if (hasSynced) return;
 
-    const hasStoredData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+    const hasStoredData = Object.values(formData ?? {}).some(
+      (v) => isNotEmptyString(v)
+    );
+
     if (hasStoredData) {
       reset(formData);
       setHasSynced(true);
     }
   }, [formData, reset, hasSynced]);
 
-  // Expose triggerValidation to parent
   useImperativeHandle(ref, () => ({
     triggerValidation: () => trigger(),
   }), [trigger]);
 
-  // Auto-save on field changes
   useEffect(() => {
     const subscription = watch((data) => {
-      dispatch(updateSituationDescriptions(data as SituationDescriptionsFormData));
+      if (data) {
+        dispatch(updateSituationDescriptions(data as SituationDescriptionsFormData));
+      }
     });
     return () => subscription.unsubscribe();
   }, [watch, dispatch]);
 
   const onSubmit = (data: SituationDescriptionsFormData) => {
-    dispatch(updateSituationDescriptions(data));
+    if (data) {
+      dispatch(updateSituationDescriptions(data));
+    }
+  };
+
+  const getFieldConfig = (fieldName: string): FormFieldConfig | null => {
+    const fields = content?.fields as Record<string, FormFieldConfig> | undefined;
+    if (!fields) return null;
+    return fields[fieldName] ?? null;
+  };
+
+  const getFieldLabel = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.label ?? fallback;
+  };
+
+  const getFieldPlaceholder = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.placeholder ?? fallback;
+  };
+
+  const getFieldHelperText = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.helperText ?? fallback;
   };
 
   const handleOpenAIModal = (
@@ -107,23 +120,18 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
   ) => {
     setActiveField(field);
     setActiveFieldLabel(fieldLabel);
-    setActiveFieldContent(currentContent);
+    setActiveFieldContent(currentContent ?? '');
     setAiModalOpen(true);
   };
 
   const handleAIAccept = useCallback(
-    (content: string) => {
-      setValue(activeField, content, { shouldValidate: true });
+    (contentValue: string) => {
+      if (activeField) {
+        setValue(activeField, contentValue, { shouldValidate: true });
+      }
     },
     [activeField, setValue]
   );
-
-  const fields = content?.fields as unknown as Record<string, {
-    label: string;
-    placeholder: string;
-    helperText: string;
-    errorMessage: Record<string, string>;
-  }>;
 
   const renderTextArea = (
     fieldName: 'financialSituation' | 'employmentCircumstances' | 'reasonForApplying',
@@ -131,7 +139,7 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
     placeholder: string,
     helperText: string
   ) => {
-    const fieldValue = watchedValues[fieldName] || '';
+    const fieldValue = watchedValues?.[fieldName] ?? '';
 
     return (
       <Controller
@@ -161,31 +169,31 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
               rows={6}
               placeholder={placeholder}
               helperText={helperText}
-              error={Boolean(errors[fieldName])}
+              error={Boolean(errors?.[fieldName])}
               required
               id={`${fieldName}-input`}
               slotProps={{
                 htmlInput: {
                   'aria-required': true,
-                  'aria-invalid': Boolean(errors[fieldName]),
+                  'aria-invalid': Boolean(errors?.[fieldName]),
                   'aria-describedby': `${fieldName}-helper`,
-                  maxLength: FORM_LIMITS.TEXTAREA_MAX + 1,
+                  maxLength: (FORM_LIMITS?.TEXTAREA_MAX ?? 2000) + 1,
                 },
               }}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-              {errors[fieldName] && (
-                <FormHelperText error>{errors[fieldName]?.message}</FormHelperText>
+              {errors?.[fieldName] && (
+                <FormHelperText error>{errors?.[fieldName]?.message}</FormHelperText>
               )}
               <Typography
                 variant="caption"
                 sx={{
-                  color: fieldValue.length > FORM_LIMITS.TEXTAREA_MAX ? 'error.main' : 'text.secondary',
+                  color: (fieldValue?.length ?? 0) > (FORM_LIMITS?.TEXTAREA_MAX ?? 2000) ? 'error.main' : 'text.secondary',
                   ml: 'auto',
                 }}
               >
-                {fieldValue.length} / {FORM_LIMITS.TEXTAREA_MAX} characters
+                {fieldValue?.length ?? 0} / {FORM_LIMITS?.TEXTAREA_MAX ?? 2000} characters
               </Typography>
             </Box>
           </Box>
@@ -197,38 +205,38 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-        {content?.title || 'Situation Descriptions'}
+        {content?.title ?? 'Situation Descriptions'}
       </Typography>
 
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-        {content?.description || ''}
+        {content?.description ?? ''}
       </Typography>
 
       <Grid container spacing={3}>
         <Grid size={12}>
           {renderTextArea(
             'financialSituation',
-            fields?.financialSituation?.label || 'Current Financial Situation',
-            fields?.financialSituation?.placeholder || 'Describe your current financial situation...',
-            fields?.financialSituation?.helperText || ''
+            getFieldLabel('financialSituation', 'Current Financial Situation'),
+            getFieldPlaceholder('financialSituation', 'Describe your current financial situation...'),
+            getFieldHelperText('financialSituation', '')
           )}
         </Grid>
 
         <Grid size={12}>
           {renderTextArea(
             'employmentCircumstances',
-            fields?.employmentCircumstances?.label || 'Employment Circumstances',
-            fields?.employmentCircumstances?.placeholder || 'Describe your employment circumstances...',
-            fields?.employmentCircumstances?.helperText || ''
+            getFieldLabel('employmentCircumstances', 'Employment Circumstances'),
+            getFieldPlaceholder('employmentCircumstances', 'Describe your employment circumstances...'),
+            getFieldHelperText('employmentCircumstances', '')
           )}
         </Grid>
 
         <Grid size={12}>
           {renderTextArea(
             'reasonForApplying',
-            fields?.reasonForApplying?.label || 'Reason For Applying',
-            fields?.reasonForApplying?.placeholder || 'Explain why you are applying for assistance...',
-            fields?.reasonForApplying?.helperText || ''
+            getFieldLabel('reasonForApplying', 'Reason For Applying'),
+            getFieldPlaceholder('reasonForApplying', 'Explain why you are applying for assistance...'),
+            getFieldHelperText('reasonForApplying', '')
           )}
         </Grid>
       </Grid>
@@ -242,17 +250,17 @@ const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, Situa
         onAccept={handleAIAccept}
         placeholder={
           activeField === 'financialSituation'
-            ? fields?.financialSituation?.placeholder
+            ? getFieldPlaceholder('financialSituation', '')
             : activeField === 'employmentCircumstances'
-            ? fields?.employmentCircumstances?.placeholder
-            : fields?.reasonForApplying?.placeholder
+            ? getFieldPlaceholder('employmentCircumstances', '')
+            : getFieldPlaceholder('reasonForApplying', '')
         }
         helperText={
           activeField === 'financialSituation'
-            ? fields?.financialSituation?.helperText
+            ? getFieldHelperText('financialSituation', '')
             : activeField === 'employmentCircumstances'
-            ? fields?.employmentCircumstances?.helperText
-            : fields?.reasonForApplying?.helperText
+            ? getFieldHelperText('employmentCircumstances', '')
+            : getFieldHelperText('reasonForApplying', '')
         }
       />
     </Box>

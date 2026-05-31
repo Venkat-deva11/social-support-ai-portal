@@ -21,19 +21,17 @@ import { useSitecoreContent } from '../../hooks/useSitecoreContent';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updatePersonalInfo } from '../../features/application/applicationSlice';
+import { isNotEmptyArray, isNotEmptyString, isNotNull } from '../../utils/common';
+import type { PersonalInfoFormRef, PersonalInfoFormProps, FormFieldConfig } from './types';
 
-export interface PersonalInfoFormRef {
-  triggerValidation: () => Promise<boolean>;
-}
-
-interface PersonalInfoFormProps {
-  defaultValues?: Partial<PersonalInfoFormData>;
-}
-
+/**
+ * Personal Information Form Component
+ * Handles user personal details input with validation
+ */
 const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(({ defaultValues }, ref) => {
   const dispatch = useDispatch();
   const content = useSitecoreContent('personal-information-page');
-  const formData = useSelector((state: RootState) => state.application.formData.personalInfo);
+  const formData = useSelector((state: RootState) => state?.application?.formData?.personalInfo);
 
   const {
     control,
@@ -46,71 +44,84 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
     resolver: yupResolver(personalInfoSchema) as any,
     mode: 'onChange',
     defaultValues: {
-      fullName: formData.fullName || defaultValues?.fullName || '',
-      nationalId: formData.nationalId || defaultValues?.nationalId || '',
-      dateOfBirth: formData.dateOfBirth || defaultValues?.dateOfBirth || '',
-      gender: formData.gender || defaultValues?.gender || '',
-      address: formData.address || defaultValues?.address || '',
-      city: formData.city || defaultValues?.city || '',
-      state: formData.state || defaultValues?.state || '',
-      country: formData.country || defaultValues?.country || '',
-      phone: formData.phone || defaultValues?.phone || '',
-      email: formData.email || defaultValues?.email || '',
+      fullName: formData?.fullName ?? defaultValues?.fullName ?? '',
+      nationalId: formData?.nationalId ?? defaultValues?.nationalId ?? '',
+      dateOfBirth: formData?.dateOfBirth ?? defaultValues?.dateOfBirth ?? '',
+      gender: formData?.gender ?? defaultValues?.gender ?? '',
+      address: formData?.address ?? defaultValues?.address ?? '',
+      city: formData?.city ?? defaultValues?.city ?? '',
+      state: formData?.state ?? defaultValues?.state ?? '',
+      country: formData?.country ?? defaultValues?.country ?? '',
+      phone: formData?.phone ?? defaultValues?.phone ?? '',
+      email: formData?.email ?? defaultValues?.email ?? '',
     },
   });
 
   const watchedValues = watch();
 
-  // Sync form with Redux state when data is restored from localStorage
-  // This handles the case where Redux store is rehydrated on page refresh
   const [hasSynced, setHasSynced] = React.useState(false);
 
   useEffect(() => {
-    // Only sync once when formData has actual values (restored from localStorage)
-    // and we haven't synced yet
     if (hasSynced) return;
 
-    const hasStoredData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+    const hasStoredData = Object.values(formData ?? {}).some(
+      (v) => isNotEmptyString(v) || typeof v === 'number'
+    );
+
     if (hasStoredData) {
       reset(formData);
       setHasSynced(true);
     }
   }, [formData, reset, hasSynced]);
 
-  // Expose triggerValidation to parent
   useImperativeHandle(ref, () => ({
     triggerValidation: () => trigger(),
   }), [trigger]);
 
-  // Auto-save on field changes
   useEffect(() => {
     const subscription = watch((data) => {
-      dispatch(updatePersonalInfo(data as PersonalInfoFormData));
+      if (data) {
+        dispatch(updatePersonalInfo(data as PersonalInfoFormData));
+      }
     });
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [watch, dispatch]);
 
   const onSubmit = (data: PersonalInfoFormData) => {
-    dispatch(updatePersonalInfo(data));
+    if (data) {
+      dispatch(updatePersonalInfo(data));
+    }
   };
 
-  const fields = content?.fields as unknown as Record<string, {
-    label: string;
-    placeholder: string;
-    helperText: string;
-    errorMessage: Record<string, string>;
-  }>;
+  const getFieldConfig = (fieldName: string): FormFieldConfig | null => {
+    const fields = content?.fields as Record<string, FormFieldConfig> | undefined;
+    if (!fields) return null;
+    return fields[fieldName] ?? null;
+  };
+
+  const getFieldLabel = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.label ?? fallback;
+  };
+
+  const getFieldPlaceholder = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.placeholder ?? fallback;
+  };
+
+  const getFieldHelperText = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.helperText ?? fallback;
+  };
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-        {content?.title || 'Personal Information'}
+        {content?.title ?? 'Personal Information'}
       </Typography>
 
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-        {content?.description || ''}
+        {content?.description ?? ''}
       </Typography>
 
       <Grid container spacing={3}>
@@ -123,24 +134,24 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.fullName?.label || 'Full Name'}
-                placeholder={fields?.fullName?.placeholder || 'Enter your full name'}
-                helperText={fields?.fullName?.helperText || ''}
-                error={Boolean(errors.fullName)}
+                label={getFieldLabel('fullName', 'Full Name')}
+                placeholder={getFieldPlaceholder('fullName', 'Enter your full name')}
+                helperText={getFieldHelperText('fullName', '')}
+                error={Boolean(errors?.fullName)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.fullName),
-                    'aria-describedby': errors.fullName ? 'fullName-error' : 'fullName-helper',
+                    'aria-invalid': Boolean(errors?.fullName),
+                    'aria-describedby': errors?.fullName ? 'fullName-error' : 'fullName-helper',
                   },
                 }}
               />
             )}
           />
-          {errors.fullName && (
+          {errors?.fullName && (
             <FormHelperText error id="fullName-error">
-              {errors.fullName.message}
+              {errors?.fullName?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -154,23 +165,23 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.nationalId?.label || 'National ID'}
-                placeholder={fields?.nationalId?.placeholder || 'Enter your national ID'}
-                helperText={fields?.nationalId?.helperText || ''}
-                error={Boolean(errors.nationalId)}
+                label={getFieldLabel('nationalId', 'National ID')}
+                placeholder={getFieldPlaceholder('nationalId', 'Enter your national ID')}
+                helperText={getFieldHelperText('nationalId', '')}
+                error={Boolean(errors?.nationalId)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.nationalId),
+                    'aria-invalid': Boolean(errors?.nationalId),
                   },
                 }}
               />
             )}
           />
-          {errors.nationalId && (
+          {errors?.nationalId && (
             <FormHelperText error>
-              {errors.nationalId.message}
+              {errors?.nationalId?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -185,12 +196,12 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
                 {...field}
                 fullWidth
                 type="date"
-                label={fields?.dateOfBirth?.label || 'Date of Birth'}
+                label={getFieldLabel('dateOfBirth', 'Date of Birth')}
                 slotProps={{
                   inputLabel: { shrink: true },
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.dateOfBirth),
+                    'aria-invalid': Boolean(errors?.dateOfBirth),
                     startAdornment: (
                       <InputAdornment position="start">
                         <CalendarTodayIcon color="action" />
@@ -198,15 +209,15 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
                     ),
                   },
                 }}
-                helperText={fields?.dateOfBirth?.helperText || ''}
-                error={Boolean(errors.dateOfBirth)}
+                helperText={getFieldHelperText('dateOfBirth', '')}
+                error={Boolean(errors?.dateOfBirth)}
                 required
               />
             )}
           />
-          {errors.dateOfBirth && (
+          {errors?.dateOfBirth && (
             <FormHelperText error>
-              {errors.dateOfBirth.message}
+              {errors?.dateOfBirth?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -217,29 +228,31 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
             name="gender"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth error={Boolean(errors.gender)} required>
+              <FormControl fullWidth error={Boolean(errors?.gender)} required>
                 <InputLabel htmlFor="gender-select">
-                  {fields?.gender?.label || 'Gender'}
+                  {getFieldLabel('gender', 'Gender')}
                 </InputLabel>
                 <Select
                   {...field}
-                  label={fields?.gender?.label || 'Gender'}
+                  label={getFieldLabel('gender', 'Gender')}
                   slotProps={{
                     input: {
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.gender),
+                      'aria-invalid': Boolean(errors?.gender),
                       id: 'gender-select',
                     },
                   }}
                 >
-                  {GENDER_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
+                  {isNotEmptyArray(GENDER_OPTIONS)
+                    ? GENDER_OPTIONS.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))
+                    : null}
                 </Select>
-                {errors.gender && (
-                  <FormHelperText>{errors.gender.message}</FormHelperText>
+                {errors?.gender && (
+                  <FormHelperText>{errors?.gender?.message}</FormHelperText>
                 )}
               </FormControl>
             )}
@@ -255,23 +268,23 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.address?.label || 'Address'}
-                placeholder={fields?.address?.placeholder || 'Enter your full residential address'}
-                helperText={fields?.address?.helperText || ''}
-                error={Boolean(errors.address)}
+                label={getFieldLabel('address', 'Address')}
+                placeholder={getFieldPlaceholder('address', 'Enter your full residential address')}
+                helperText={getFieldHelperText('address', '')}
+                error={Boolean(errors?.address)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.address),
+                    'aria-invalid': Boolean(errors?.address),
                   },
                 }}
               />
             )}
           />
-          {errors.address && (
+          {errors?.address && (
             <FormHelperText error>
-              {errors.address.message}
+              {errors?.address?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -285,22 +298,22 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.city?.label || 'City'}
-                placeholder={fields?.city?.placeholder || 'Enter your city'}
-                error={Boolean(errors.city)}
+                label={getFieldLabel('city', 'City')}
+                placeholder={getFieldPlaceholder('city', 'Enter your city')}
+                error={Boolean(errors?.city)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.city),
+                    'aria-invalid': Boolean(errors?.city),
                   },
                 }}
               />
             )}
           />
-          {errors.city && (
+          {errors?.city && (
             <FormHelperText error>
-              {errors.city.message}
+              {errors?.city?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -314,22 +327,22 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.state?.label || 'State/Province'}
-                placeholder={fields?.state?.placeholder || 'Enter your state or province'}
-                error={Boolean(errors.state)}
+                label={getFieldLabel('state', 'State/Province')}
+                placeholder={getFieldPlaceholder('state', 'Enter your state or province')}
+                error={Boolean(errors?.state)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.state),
+                    'aria-invalid': Boolean(errors?.state),
                   },
                 }}
               />
             )}
           />
-          {errors.state && (
+          {errors?.state && (
             <FormHelperText error>
-              {errors.state.message}
+              {errors?.state?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -340,29 +353,31 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
             name="country"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth error={Boolean(errors.country)} required>
+              <FormControl fullWidth error={Boolean(errors?.country)} required>
                 <InputLabel htmlFor="country-select">
-                  {fields?.country?.label || 'Country'}
+                  {getFieldLabel('country', 'Country')}
                 </InputLabel>
                 <Select
                   {...field}
-                  label={fields?.country?.label || 'Country'}
+                  label={getFieldLabel('country', 'Country')}
                   slotProps={{
                     input: {
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.country),
+                      'aria-invalid': Boolean(errors?.country),
                       id: 'country-select',
                     },
                   }}
                 >
-                  {COUNTRIES.map((country) => (
-                    <MenuItem key={country} value={country}>
-                      {country}
-                    </MenuItem>
-                  ))}
+                  {isNotEmptyArray(COUNTRIES)
+                    ? COUNTRIES.map((country) => (
+                        <MenuItem key={country} value={country}>
+                          {country}
+                        </MenuItem>
+                      ))
+                    : null}
                 </Select>
-                {errors.country && (
-                  <FormHelperText>{errors.country.message}</FormHelperText>
+                {errors?.country && (
+                  <FormHelperText>{errors?.country?.message}</FormHelperText>
                 )}
               </FormControl>
             )}
@@ -378,23 +393,23 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
               <TextField
                 {...field}
                 fullWidth
-                label={fields?.phone?.label || 'Phone Number'}
-                placeholder={fields?.phone?.placeholder || '+1 234 567 8900'}
-                helperText={fields?.phone?.helperText || ''}
-                error={Boolean(errors.phone)}
+                label={getFieldLabel('phone', 'Phone Number')}
+                placeholder={getFieldPlaceholder('phone', '+1 234 567 8900')}
+                helperText={getFieldHelperText('phone', '')}
+                error={Boolean(errors?.phone)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.phone),
+                    'aria-invalid': Boolean(errors?.phone),
                   },
                 }}
               />
             )}
           />
-          {errors.phone && (
+          {errors?.phone && (
             <FormHelperText error>
-              {errors.phone.message}
+              {errors?.phone?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -409,23 +424,23 @@ const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(
                 {...field}
                 fullWidth
                 type="email"
-                label={fields?.email?.label || 'Email Address'}
-                placeholder={fields?.email?.placeholder || 'Enter your email address'}
-                helperText={fields?.email?.helperText || ''}
-                error={Boolean(errors.email)}
+                label={getFieldLabel('email', 'Email Address')}
+                placeholder={getFieldPlaceholder('email', 'Enter your email address')}
+                helperText={getFieldHelperText('email', '')}
+                error={Boolean(errors?.email)}
                 required
                 slotProps={{
                   input: {
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.email),
+                    'aria-invalid': Boolean(errors?.email),
                   },
                 }}
               />
             )}
           />
-          {errors.email && (
+          {errors?.email && (
             <FormHelperText error>
-              {errors.email.message}
+              {errors?.email?.message}
             </FormHelperText>
           )}
         </Grid>

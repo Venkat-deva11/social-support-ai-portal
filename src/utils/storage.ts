@@ -1,15 +1,14 @@
-import { STORAGE_KEYS } from '../constants';
-import type { ApplicationFormData, Language } from '../types';
-
-interface StoredApplication {
-  currentStep: number;
-  formData: ApplicationFormData;
-  language: Language;
-  savedAt: string;
-}
-
 /**
  * LocalStorage utility for persisting application data
+ * Provides type-safe storage operations with error handling
+ */
+
+import { STORAGE_KEYS } from '../constants';
+import type { ApplicationFormData, Language, StoredApplication } from '../types';
+import { safeJsonParse } from './common';
+
+/**
+ * Storage service for managing application persistence
  */
 export const StorageService = {
   /**
@@ -21,6 +20,8 @@ export const StorageService = {
     language: Language
   ): void => {
     try {
+      if (!formData) return;
+
       const data: StoredApplication = {
         currentStep,
         formData,
@@ -40,7 +41,8 @@ export const StorageService = {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.APPLICATION_DATA);
       if (!data) return null;
-      return JSON.parse(data) as StoredApplication;
+
+      return safeJsonParse<StoredApplication | null>(data, null);
     } catch (error) {
       console.error('Failed to load application from localStorage:', error);
       return null;
@@ -64,7 +66,8 @@ export const StorageService = {
    */
   hasSavedApplication: (): boolean => {
     try {
-      return localStorage.getItem(STORAGE_KEYS.APPLICATION_DATA) !== null;
+      const data = localStorage.getItem(STORAGE_KEYS.APPLICATION_DATA);
+      return data !== null && data.length > 0;
     } catch {
       return false;
     }
@@ -87,7 +90,10 @@ export const StorageService = {
   getCurrentStep: (): number | null => {
     try {
       const step = localStorage.getItem(STORAGE_KEYS.CURRENT_STEP);
-      return step ? parseInt(step, 10) : null;
+      if (!step) return null;
+
+      const parsed = parseInt(step, 10);
+      return isNaN(parsed) ? null : parsed;
     } catch {
       return null;
     }

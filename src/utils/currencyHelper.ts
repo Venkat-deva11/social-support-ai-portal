@@ -3,6 +3,11 @@
  * Supports different currencies based on country selection
  */
 
+import { isNotEmptyString } from './common';
+
+/**
+ * Currency configuration for a country
+ */
 export interface CurrencyConfig {
   code: string;
   symbol: string;
@@ -94,44 +99,67 @@ const CURRENCY_CONFIG: Record<string, CurrencyConfig> = {
   'Other': { code: 'USD', symbol: '$', decimals: 2, thousandsSeparator: ',', decimalSeparator: '.' },
 };
 
+// Default currency config
+const DEFAULT_CURRENCY = CURRENCY_CONFIG['United States'];
+
 /**
  * Get currency configuration for a country
  */
 export function getCurrencyConfig(country: string): CurrencyConfig {
-  return CURRENCY_CONFIG[country] || CURRENCY_CONFIG['United States'];
+  if (!isNotEmptyString(country)) return DEFAULT_CURRENCY;
+  return CURRENCY_CONFIG[country] ?? DEFAULT_CURRENCY;
 }
 
 /**
  * Get currency symbol for a country
  */
 export function getCurrencySymbol(country: string): string {
-  return getCurrencyConfig(country).symbol;
+  const config = getCurrencyConfig(country);
+  return config?.symbol ?? DEFAULT_CURRENCY.symbol;
 }
 
 /**
  * Get decimal places for a country
  */
 export function getCurrencyDecimals(country: string): number {
-  return getCurrencyConfig(country).decimals;
+  const config = getCurrencyConfig(country);
+  return config?.decimals ?? DEFAULT_CURRENCY.decimals;
+}
+
+/**
+ * Get currency code for a country
+ */
+export function getCurrencyCode(country: string): string {
+  const config = getCurrencyConfig(country);
+  return config?.code ?? DEFAULT_CURRENCY.code;
+}
+
+/**
+ * Find currency config by code
+ */
+function findCurrencyConfigByCode(code: string): CurrencyConfig | undefined {
+  if (!isNotEmptyString(code)) return undefined;
+  return Object.values(CURRENCY_CONFIG).find(c => c?.code === code);
 }
 
 /**
  * Format a number for display in the input field
- * Only applies formatting when the value is being displayed (not for editing)
  */
 export function formatCurrencyInput(value: number | undefined, currencyCode: string): string {
   if (value === undefined || value === null || value === 0) return '';
 
-  const config = Object.values(CURRENCY_CONFIG).find(c => c.code === currencyCode) || CURRENCY_CONFIG['USD'];
+  const config = findCurrencyConfigByCode(currencyCode) ?? DEFAULT_CURRENCY;
+  const decimals = config?.decimals ?? 2;
 
-  const parts = value.toFixed(config.decimals).split('.');
-  const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, config.thousandsSeparator);
+  const fixedValue = value.toFixed(decimals);
+  const parts = fixedValue.split('.');
+  const integerPart = parts?.[0]?.replace(/\B(?=(\d{3})+(?!\d))/g, config?.thousandsSeparator ?? ',') ?? '';
 
-  if (config.decimals === 0) {
+  if (decimals === 0) {
     return integerPart;
   }
 
-  return `${integerPart}${config.decimalSeparator}${parts[1]}`;
+  return `${integerPart}${config?.decimalSeparator ?? '.'}${parts?.[1] ?? '00'}`;
 }
 
 /**
@@ -139,22 +167,28 @@ export function formatCurrencyInput(value: number | undefined, currencyCode: str
  * Returns the raw numeric value
  */
 export function parseCurrencyInput(input: string, currencyCode: string): number {
-  if (!input || input.trim() === '') return 0;
+  if (!isNotEmptyString(input)) return 0;
 
-  const config = Object.values(CURRENCY_CONFIG).find(c => c.code === currencyCode) || CURRENCY_CONFIG['USD'];
-
-  // Remove all non-numeric characters except decimal separator
+  // Remove all non-numeric characters except decimal separator and minus
   let numericString = input.replace(/[^\d.-]/g, '');
 
   // Handle negative values
   const isNegative = numericString.startsWith('-');
   numericString = numericString.replace(/-/g, '');
 
-  if (numericString === '') return 0;
+  if (!isNotEmptyString(numericString)) return 0;
 
-  let value = parseFloat(numericString);
-
+  const value = parseFloat(numericString);
   if (isNaN(value)) return 0;
 
   return isNegative ? -value : value;
 }
+
+export default {
+  getCurrencyConfig,
+  getCurrencySymbol,
+  getCurrencyDecimals,
+  getCurrencyCode,
+  formatCurrencyInput,
+  parseCurrencyInput,
+};

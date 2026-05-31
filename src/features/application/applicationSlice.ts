@@ -1,17 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { ApplicationFormData, Language } from '../../types';
+import type {
+  ApplicationFormData,
+  ApplicationState,
+  Language,
+  PersonalInfo,
+  FamilyFinancialInfo,
+  SituationDescriptions,
+} from './types';
 import { STEPS } from '../../constants';
 
-interface ApplicationState {
-  currentStep: number;
-  formData: ApplicationFormData;
-  isSubmitted: boolean;
-  isSubmitting: boolean;
-  submitError: string | null;
-  language: Language;
-}
-
-const initialFormData: ApplicationFormData = {
+const createInitialFormData = (): ApplicationFormData => ({
   personalInfo: {
     fullName: '',
     nationalId: '',
@@ -36,7 +34,9 @@ const initialFormData: ApplicationFormData = {
     employmentCircumstances: '',
     reasonForApplying: '',
   },
-};
+});
+
+const initialFormData = createInitialFormData();
 
 const initialState: ApplicationState = {
   currentStep: STEPS.PERSONAL_INFO,
@@ -57,36 +57,44 @@ const applicationSlice = createSlice({
 
     updatePersonalInfo: (
       state,
-      action: PayloadAction<Partial<ApplicationFormData['personalInfo']>>
+      action: PayloadAction<Partial<PersonalInfo>>
     ) => {
-      state.formData.personalInfo = {
-        ...state.formData.personalInfo,
-        ...action.payload,
-      };
+      if (state.formData?.personalInfo) {
+        state.formData.personalInfo = {
+          ...state.formData.personalInfo,
+          ...action.payload,
+        };
+      }
     },
 
     updateFamilyFinancialInfo: (
       state,
-      action: PayloadAction<Partial<ApplicationFormData['familyFinancialInfo']>>
+      action: PayloadAction<Partial<FamilyFinancialInfo>>
     ) => {
-      state.formData.familyFinancialInfo = {
-        ...state.formData.familyFinancialInfo,
-        ...action.payload,
-      };
+      if (state.formData?.familyFinancialInfo) {
+        state.formData.familyFinancialInfo = {
+          ...state.formData.familyFinancialInfo,
+          ...action.payload,
+        };
+      }
     },
 
     updateSituationDescriptions: (
       state,
-      action: PayloadAction<Partial<ApplicationFormData['situationDescriptions']>>
+      action: PayloadAction<Partial<SituationDescriptions>>
     ) => {
-      state.formData.situationDescriptions = {
-        ...state.formData.situationDescriptions,
-        ...action.payload,
-      };
+      if (state.formData?.situationDescriptions) {
+        state.formData.situationDescriptions = {
+          ...state.formData.situationDescriptions,
+          ...action.payload,
+        };
+      }
     },
 
     updateFormData: (state, action: PayloadAction<ApplicationFormData>) => {
-      state.formData = action.payload;
+      if (action.payload) {
+        state.formData = action.payload;
+      }
     },
 
     setLanguage: (state, action: PayloadAction<Language>) => {
@@ -115,9 +123,16 @@ const applicationSlice = createSlice({
         language: Language;
       }>
     ) => {
-      state.currentStep = action.payload.currentStep;
-      state.formData = action.payload.formData;
-      state.language = action.payload.language;
+      const { currentStep, formData, language } = action.payload ?? {};
+      if (currentStep !== undefined) {
+        state.currentStep = currentStep;
+      }
+      if (formData) {
+        state.formData = formData;
+      }
+      if (language) {
+        state.language = language;
+      }
     },
   },
 });

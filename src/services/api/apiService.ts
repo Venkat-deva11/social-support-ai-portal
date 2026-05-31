@@ -1,36 +1,32 @@
+/**
+ * API Service
+ * Handles application submission to backend
+ */
+
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_TIMEOUT } from '../../constants';
-import type { ApiResponse } from '../../types';
-
-interface SubmissionData {
-  personalInfo: Record<string, string | number>;
-  familyFinancialInfo: Record<string, string | number>;
-  situationDescriptions: Record<string, string>;
-}
-
-interface MockSubmissionResponse {
-  id: string;
-  referenceNumber: string;
-  status: string;
-  submittedAt: string;
-}
+import { JSONPLACEHOLDER_API } from '../apiEndpoints';
+import type { ApiResponse, SubmissionData, MockSubmissionResponse } from '../../types';
 
 /**
- * API service for application submission
- * Uses jsonplaceholder for mock API calls
+ * Axios instance with default configuration
  */
-export const ApiService = {
-  /**
-   * Axios instance with default configuration
-   */
-  api: axios.create({
-    baseURL: 'https://jsonplaceholder.typicode.com',
+const createApiInstance = (): AxiosInstance => {
+  return axios.create({
+    baseURL: JSONPLACEHOLDER_API.baseURL,
     timeout: API_TIMEOUT,
     headers: {
       'Content-Type': 'application/json',
     },
-  }) as AxiosInstance,
+  });
+};
 
+const api = createApiInstance();
+
+/**
+ * API service for application submission
+ */
+export const ApiService = {
   /**
    * Submit application to mock API
    */
@@ -38,9 +34,17 @@ export const ApiService = {
     data: SubmissionData
   ): Promise<ApiResponse<MockSubmissionResponse>> => {
     try {
+      // Validate input data
+      if (!data?.personalInfo?.fullName) {
+        return {
+          success: false,
+          error: 'Invalid submission data: full name is required',
+        };
+      }
+
       // Simulate API call to jsonplaceholder
-      const response = await ApiService.api.post<MockSubmissionResponse>(
-        '/posts',
+      const response = await api.post<MockSubmissionResponse>(
+        JSONPLACEHOLDER_API.endpoints.posts,
         {
           title: `Application: ${data.personalInfo.fullName}`,
           body: JSON.stringify(data),
@@ -54,7 +58,7 @@ export const ApiService = {
       return {
         success: true,
         data: {
-          id: response.data.id?.toString() || '1',
+          id: response?.data?.id?.toString() ?? '1',
           referenceNumber,
           status: 'submitted',
           submittedAt: new Date().toISOString(),
@@ -63,13 +67,13 @@ export const ApiService = {
     } catch (error) {
       const axiosError = error as AxiosError;
 
-      if (axiosError.response) {
+      if (axiosError?.response) {
         // Server responded with error status
         return {
           success: false,
           error: `Server error: ${axiosError.response.status}`,
         };
-      } else if (axiosError.request) {
+      } else if (axiosError?.request) {
         // Request was made but no response received
         return {
           success: false,
@@ -90,7 +94,7 @@ export const ApiService = {
    */
   healthCheck: async (): Promise<boolean> => {
     try {
-      await ApiService.api.get('/posts/1');
+      await api.get(`${JSONPLACEHOLDER_API.endpoints.posts}/1`);
       return true;
     } catch {
       return false;

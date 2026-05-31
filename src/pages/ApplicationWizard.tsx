@@ -27,16 +27,22 @@ import { STEPS, STEP_NAMES } from '../constants';
 
 import ApplicationStepper from '../components/wizard/ApplicationStepper';
 import WizardNavigation from '../components/wizard/WizardNavigation';
-import PersonalInfoForm, { PersonalInfoFormRef } from '../components/forms/PersonalInfoForm';
-import FamilyFinancialForm, { FamilyFinancialFormRef } from '../components/forms/FamilyFinancialForm';
-import SituationDescriptionsForm, { SituationDescriptionsFormRef } from '../components/forms/SituationDescriptionsForm';
+import PersonalInfoForm from '../components/forms/PersonalInfoForm';
+import FamilyFinancialForm from '../components/forms/FamilyFinancialForm';
+import SituationDescriptionsForm from '../components/forms/SituationDescriptionsForm';
+import type { PersonalInfoFormRef, FamilyFinancialFormRef, SituationDescriptionsFormRef } from '../components/forms/types';
 
 import {
   personalInfoSchema,
   familyFinancialSchema,
   situationDescriptionsSchema,
 } from '../utils/validation';
+import { isNotEmptyString } from '../utils/common';
 
+/**
+ * Application Wizard Component
+ * Main form wizard that orchestrates multi-step form flow
+ */
 const ApplicationWizard: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -48,21 +54,20 @@ const ApplicationWizard: React.FC = () => {
     isSubmitting,
     submitError,
     language,
-  } = useSelector((state: RootState) => state.application);
+  } = useSelector((state: RootState) => state?.application ?? {});
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const prevStepRef = useRef(currentStep);
   const wasResetRef = useRef(false);
 
-  // Refs for each form to trigger validation
-  const personalInfoRef = useRef<PersonalInfoFormRef>(null);
-  const familyFinancialRef = useRef<FamilyFinancialFormRef>(null);
-  const situationDescriptionsRef = useRef<SituationDescriptionsFormRef>(null);
+  const personalInfoRef = useRef<PersonalInfoFormRef | null>(null);
+  const familyFinancialRef = useRef<FamilyFinancialFormRef | null>(null);
+  const situationDescriptionsRef = useRef<SituationDescriptionsFormRef | null>(null);
 
   const TOTAL_STEPS = 3;
 
-  const getFormRef = () => {
+  const getFormRef = useCallback(() => {
     switch (currentStep) {
       case STEPS.PERSONAL_INFO:
         return personalInfoRef;
@@ -73,53 +78,54 @@ const ApplicationWizard: React.FC = () => {
       default:
         return null;
     }
-  };
+  }, [currentStep]);
 
-  // Restore saved application on mount
   useEffect(() => {
     const savedApp = StorageService.loadApplication();
     if (savedApp) {
       // Small delay to ensure store is ready
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         dispatch(
           restoreApplication({
-            currentStep: savedApp.currentStep,
-            formData: savedApp.formData,
-            language: savedApp.language,
+            currentStep: savedApp?.currentStep,
+            formData: savedApp?.formData,
+            language: savedApp?.language,
           })
         );
       }, 0);
+      return () => clearTimeout(timeoutId);
     }
   }, [dispatch]);
 
-  // Auto-save on step change
   useEffect(() => {
-    // Skip saving if we just reset
     if (wasResetRef.current) {
       wasResetRef.current = false;
       return;
     }
     // Debounce to avoid rapid saves
     const timeoutId = setTimeout(() => {
-      StorageService.saveApplication(currentStep, formData, language);
+      StorageService.saveApplication(
+        currentStep ?? STEPS.PERSONAL_INFO,
+        formData ?? {},
+        language ?? 'en'
+      );
     }, 500);
     return () => clearTimeout(timeoutId);
   }, [currentStep, formData, language]);
 
-  // Force form re-render when formData is reset (from clear)
   useEffect(() => {
-    if (formData.personalInfo.fullName === '' &&
-        formData.familyFinancialInfo.maritalStatus === '' &&
-        formData.situationDescriptions.financialSituation === '' &&
-        currentStep === 1 &&
-        StorageService.loadApplication() === null) {
-      // Form was reset and no data in storage - remount forms
-      setResetKey(prev => prev + 1);
+    const personalInfoEmpty = !isNotEmptyString(formData?.personalInfo?.fullName);
+    const familyInfoEmpty = !isNotEmptyString(formData?.familyFinancialInfo?.maritalStatus);
+    const situationEmpty = !isNotEmptyString(formData?.situationDescriptions?.financialSituation);
+    const isAtFirstStep = currentStep === 1;
+    const hasNoSavedData = !StorageService.loadApplication();
+
+    if (personalInfoEmpty && familyInfoEmpty && situationEmpty && isAtFirstStep && hasNoSavedData) {
+      setResetKey((prev) => prev + 1);
       wasResetRef.current = true;
     }
   }, [formData, currentStep]);
 
-  // Reset refs when step changes
   useEffect(() => {
     if (prevStepRef.current !== currentStep) {
       prevStepRef.current = currentStep;
@@ -145,24 +151,21 @@ const ApplicationWizard: React.FC = () => {
       }
 
       try {
-        // Get the appropriate form data based on step
-        const dataForValidation = step === STEPS.PERSONAL_INFO
-          ? formData.personalInfo
-          : step === STEPS.FAMILY_FINANCIAL
-          ? formData.familyFinancialInfo
-          : formData.situationDescriptions;
+        const dataForValidation =
+          step === STEPS.PERSONAL_INFO
+            ? formData?.personalInfo
+            : step === STEPS.FAMILY_FINANCIAL
+            ? formData?.familyFinancialInfo
+            : formData?.situationDescriptions;
 
         await schema.validate(dataForValidation, { abortEarly: false });
         return true;
       } catch (error: any) {
-        // Extract errors from yup validation
-        if (error.inner && Array.isArray(error.inner)) {
-          // Show first error as toast (for user feedback)
-          if (error.inner.length > 0) {
-            toast.error(error.inner[0].message, {
-              position: 'bottom-right',
-            });
-          }
+        const errors = error?.inner;
+        if (Array.isArray(errors) && errors.length > 0) {
+          toast.error(errors[0]?.message ?? 'Validation error', {
+            position: 'bottom-right',
+          });
         }
         return false;
       }
@@ -171,7 +174,6 @@ const ApplicationWizard: React.FC = () => {
   );
 
   const handleNext = useCallback(async () => {
-    // Trigger form validation first to show field-level errors
     const formRef = getFormRef();
     let isFormValid = true;
 
@@ -180,28 +182,27 @@ const ApplicationWizard: React.FC = () => {
     }
 
     if (!isFormValid) {
-      return; // Don't proceed if form is invalid - field errors will show
+      return; 
     }
 
-    const isValid = await validateStep(currentStep);
+    const isValid = await validateStep(currentStep ?? STEPS.PERSONAL_INFO);
 
     if (isValid) {
-      if (currentStep < TOTAL_STEPS) {
-        dispatch(setCurrentStep(currentStep + 1));
+      if ((currentStep ?? 1) < TOTAL_STEPS) {
+        dispatch(setCurrentStep((currentStep ?? 1) + 1));
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [currentStep, validateStep, dispatch]);
+  }, [currentStep, validateStep, dispatch, getFormRef]);
 
   const handlePrevious = useCallback(() => {
-    if (currentStep > 1) {
-      dispatch(setCurrentStep(currentStep - 1));
+    if ((currentStep ?? 1) > 1) {
+      dispatch(setCurrentStep((currentStep ?? 1) - 1));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentStep, dispatch]);
 
   const handleSubmitForm = useCallback(async () => {
-    // Trigger form validation first
     const formRef = getFormRef();
     let isFormValid = true;
 
@@ -210,10 +211,10 @@ const ApplicationWizard: React.FC = () => {
     }
 
     if (!isFormValid) {
-      return; // Don't proceed if form is invalid
+      return; 
     }
 
-    const isValid = await validateStep(currentStep);
+    const isValid = await validateStep(currentStep ?? STEPS.PERSONAL_INFO);
 
     if (!isValid) {
       return;
@@ -224,26 +225,26 @@ const ApplicationWizard: React.FC = () => {
 
     try {
       const result = await ApiService.submitApplication({
-        personalInfo: formData.personalInfo as unknown as Record<string, string | number>,
-        familyFinancialInfo: formData.familyFinancialInfo as unknown as Record<string, string | number>,
-        situationDescriptions: formData.situationDescriptions as unknown as Record<string, string>,
+        personalInfo: formData?.personalInfo as unknown as Record<string, string | number>,
+        familyFinancialInfo: formData?.familyFinancialInfo as unknown as Record<string, string | number>,
+        situationDescriptions: formData?.situationDescriptions as unknown as Record<string, string>,
       });
 
-      if (result.success) {
+      if (result?.success) {
         dispatch(setSubmitted(true));
         StorageService.clearApplication();
         navigate('/success');
       } else {
-        dispatch(setSubmitError(result.error || 'Submission failed. Please try again.'));
+        dispatch(setSubmitError(result?.error ?? 'Submission failed. Please try again.'));
       }
     } catch {
       dispatch(setSubmitError('An unexpected error occurred. Please try again.'));
     } finally {
       dispatch(setSubmitting(false));
     }
-  }, [currentStep, validateStep, formData, dispatch, navigate]);
+  }, [currentStep, validateStep, formData, dispatch, navigate, getFormRef]);
 
-  const renderCurrentStep = () => {
+  const renderCurrentStep = useCallback(() => {
     switch (currentStep) {
       case STEPS.PERSONAL_INFO:
         return <PersonalInfoForm key={resetKey} ref={personalInfoRef} />;
@@ -254,9 +255,10 @@ const ApplicationWizard: React.FC = () => {
       default:
         return null;
     }
-  };
+  }, [currentStep, resetKey]);
 
-  const progress = (currentStep / TOTAL_STEPS) * 100;
+  const progress = ((currentStep ?? 1) / TOTAL_STEPS) * 100;
+  const currentStepKey = currentStep as keyof typeof STEP_NAMES;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -277,10 +279,10 @@ const ApplicationWizard: React.FC = () => {
           gutterBottom
           sx={{ mb: 2, textAlign: 'center', color: 'primary.main', fontWeight: 'bold' }}
         >
-          {t('common.appName')}
+          {t('common.appName') ?? 'Social Support Application'}
         </Typography>
 
-        <ApplicationStepper activeStep={currentStep} />
+        <ApplicationStepper activeStep={currentStep ?? 1} />
 
         <LinearProgress
           variant="determinate"
@@ -306,7 +308,7 @@ const ApplicationWizard: React.FC = () => {
           }}
         >
           <Typography variant="h6" gutterBottom>
-            {STEP_NAMES[currentStep as keyof typeof STEP_NAMES]}
+            {STEP_NAMES[currentStepKey] ?? 'Step'}
           </Typography>
         </Box>
 
@@ -326,7 +328,7 @@ const ApplicationWizard: React.FC = () => {
         </Box>
 
         <WizardNavigation
-          currentStep={currentStep}
+          currentStep={currentStep ?? 1}
           totalSteps={TOTAL_STEPS}
           onNext={handleNext}
           onPrevious={handlePrevious}
@@ -344,7 +346,7 @@ const ApplicationWizard: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity="success" onClose={() => setShowSuccessSnackbar(false)}>
-          {t('common.applicationSubmitted')}
+          {t('common.applicationSubmitted') ?? 'Application submitted successfully'}
         </Alert>
       </Snackbar>
     </Container>

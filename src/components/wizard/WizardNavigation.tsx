@@ -1,25 +1,18 @@
 import React from 'react';
-import { Box, Card, CardContent, Typography, Button, Stack } from '@mui/material';
+import { Box, Button, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import { setCurrentStep, updateFormData, resetForm } from '../../features/application/applicationSlice';
+import { resetForm } from '../../features/application/applicationSlice';
 import { StorageService } from '../../utils/storage';
 import i18n from '../../i18n';
+import type { WizardNavigationProps } from './types';
 
-interface WizardNavigationProps {
-  currentStep: number;
-  totalSteps: number;
-  onNext?: () => void;
-  onPrevious?: () => void;
-  onSubmit?: () => void;
-  isNextDisabled?: boolean;
-  isPreviousDisabled?: boolean;
-  showSubmit?: boolean;
-  isSubmitting?: boolean;
-}
-
+/**
+ * Wizard Navigation Component
+ * Handles navigation between form steps and form actions
+ */
 const WizardNavigation: React.FC<WizardNavigationProps> = ({
   currentStep,
   totalSteps,
@@ -53,7 +46,7 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
     i18n.changeLanguage('en');
     document.documentElement.dir = 'ltr';
     document.documentElement.lang = 'en';
-    toast.success(t('common.clearedSuccessfully'), {
+    toast.success(t('common.clearedSuccessfully') ?? 'Application cleared successfully', {
       position: 'bottom-right',
       autoClose: 3000,
     });
@@ -79,9 +72,9 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
           variant="outlined"
           onClick={handlePrevious}
           disabled={isPreviousDisabled || currentStep === 1}
-          aria-label={`${t('common.previous')} ${currentStep > 1 ? `Step ${currentStep - 1}` : ''}`}
+          aria-label={`${t('common.previous') ?? 'Previous'} ${currentStep > 1 ? `Step ${currentStep - 1}` : ''}`}
         >
-          {t('common.previous')}
+          {t('common.previous') ?? 'Previous'}
         </Button>
 
         {!showSubmit && (
@@ -89,9 +82,9 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
             variant="contained"
             onClick={handleNext}
             disabled={isNextDisabled}
-            aria-label={`${t('common.next')} ${currentStep < totalSteps ? `Step ${currentStep + 1}` : ''}`}
+            aria-label={`${t('common.next') ?? 'Next'} ${currentStep < totalSteps ? `Step ${currentStep + 1}` : ''}`}
           >
-            {t('common.next')}
+            {t('common.next') ?? 'Next'}
           </Button>
         )}
 
@@ -101,9 +94,9 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
             color="secondary"
             onClick={onSubmit}
             disabled={isSubmitting}
-            aria-label={t('common.submit')}
+            aria-label={t('common.submit') ?? 'Submit'}
           >
-            {isSubmitting ? t('common.loading') : t('common.submit')}
+            {isSubmitting ? (t('common.loading') ?? 'Loading...') : (t('common.submit') ?? 'Submit')}
           </Button>
         )}
       </Stack>
@@ -112,9 +105,9 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
         variant="text"
         color="error"
         onClick={handleClearApplication}
-        aria-label={t('common.clearSavedApplication')}
+        aria-label={t('common.clearSavedApplication') ?? 'Clear saved application'}
       >
-        {t('common.clearSavedApplication')}
+        {t('common.clearSavedApplication') ?? 'Clear saved application'}
       </Button>
     </Box>
   );

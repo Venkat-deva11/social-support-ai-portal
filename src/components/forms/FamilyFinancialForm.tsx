@@ -13,49 +13,29 @@ import {
   InputAdornment,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {
-  familyFinancialSchema,
-} from '../../utils/validation';
+import { familyFinancialSchema } from '../../utils/validation';
 import type { FamilyFinancialFormData } from '../../utils/validation';
-import {
-  MARITAL_STATUS_OPTIONS,
-  EMPLOYMENT_STATUS_OPTIONS,
-  HOUSING_STATUS_OPTIONS,
-} from '../../constants';
+import { MARITAL_STATUS_OPTIONS, EMPLOYMENT_STATUS_OPTIONS, HOUSING_STATUS_OPTIONS } from '../../constants';
 import { useSitecoreContent } from '../../hooks/useSitecoreContent';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updateFamilyFinancialInfo } from '../../features/application/applicationSlice';
-import {
-  getCurrencyConfig,
-  formatCurrencyInput,
-  parseCurrencyInput,
-  getCurrencySymbol,
-  getCurrencyDecimals,
-} from '../../utils/currencyHelper';
+import { getCurrencyConfig, formatCurrencyInput, parseCurrencyInput, getCurrencySymbol } from '../../utils/currencyHelper';
+import { isNotEmptyArray, isNotEmptyString } from '../../utils/common';
+import type { FamilyFinancialFormRef, FamilyFinancialFormProps, FormFieldConfig } from './types';
 
-export interface FamilyFinancialFormRef {
-  triggerValidation: () => Promise<boolean>;
-}
-
-interface FamilyFinancialFormProps {
-  defaultValues?: Partial<FamilyFinancialFormData>;
-}
-
+/**
+ * Family Financial Form Component
+ * Handles family and financial details input with validation
+ */
 const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFormProps>(({ defaultValues }, ref) => {
   const dispatch = useDispatch();
   const content = useSitecoreContent('family-financial-page');
-  const formData = useSelector(
-    (state: RootState) => state.application.formData.familyFinancialInfo
-  );
-  const country = useSelector(
-    (state: RootState) => state.application.formData.personalInfo?.country
-  ) || 'United States';
+  const formData = useSelector((state: RootState) => state?.application?.formData?.familyFinancialInfo);
+  const country = useSelector((state: RootState) => state?.application?.formData?.personalInfo?.country) ?? 'United States';
 
-  // Get currency config based on country
   const currencyConfig = getCurrencyConfig(country);
   const currencySymbol = getCurrencySymbol(country);
-  const currencyDecimals = getCurrencyDecimals(country);
 
   const {
     control,
@@ -64,35 +44,35 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
     watch,
     trigger,
     reset,
-    setValue,
   } = useForm<FamilyFinancialFormData>({
     resolver: yupResolver(familyFinancialSchema) as any,
     mode: 'onChange',
     defaultValues: {
-      maritalStatus: formData.maritalStatus || defaultValues?.maritalStatus || '',
-      dependents: formData.dependents ?? defaultValues?.dependents ?? 0,
-      employmentStatus: formData.employmentStatus || defaultValues?.employmentStatus || '',
-      monthlyIncome: formData.monthlyIncome ?? defaultValues?.monthlyIncome ?? 0,
-      housingStatus: formData.housingStatus || defaultValues?.housingStatus || '',
+      maritalStatus: formData?.maritalStatus ?? defaultValues?.maritalStatus ?? '',
+      dependents: formData?.dependents ?? defaultValues?.dependents ?? 0,
+      employmentStatus: formData?.employmentStatus ?? defaultValues?.employmentStatus ?? '',
+      monthlyIncome: formData?.monthlyIncome ?? defaultValues?.monthlyIncome ?? 0,
+      housingStatus: formData?.housingStatus ?? defaultValues?.housingStatus ?? '',
     },
   });
 
   const watchedValues = watch();
 
-  // Sync form with Redux state when data is restored from localStorage
   const [hasSynced, setHasSynced] = React.useState(false);
 
   useEffect(() => {
     if (hasSynced) return;
 
-    const hasStoredData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+    const hasStoredData = Object.values(formData ?? {}).some(
+      (v) => isNotEmptyString(v) || typeof v === 'number'
+    );
+
     if (hasStoredData) {
       reset(formData);
       setHasSynced(true);
     }
   }, [formData, reset, hasSynced]);
 
-  // Expose triggerValidation to parent
   useImperativeHandle(ref, () => ({
     triggerValidation: () => trigger(),
   }), [trigger]);
@@ -100,44 +80,57 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
   // Auto-save on field changes
   useEffect(() => {
     const subscription = watch((data) => {
-      dispatch(updateFamilyFinancialInfo(data as FamilyFinancialFormData));
+      if (data) {
+        dispatch(updateFamilyFinancialInfo(data as FamilyFinancialFormData));
+      }
     });
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [watch, dispatch]);
 
   const onSubmit = (data: FamilyFinancialFormData) => {
-    dispatch(updateFamilyFinancialInfo(data));
+    if (data) {
+      dispatch(updateFamilyFinancialInfo(data));
+    }
   };
 
-  const fields = content?.fields as unknown as Record<string, {
-    label: string;
-    placeholder: string;
-    helperText: string;
-    errorMessage: Record<string, string>;
-  }>;
+  const getFieldConfig = (fieldName: string): FormFieldConfig | null => {
+    const fields = content?.fields as Record<string, FormFieldConfig> | undefined;
+    if (!fields) return null;
+    return fields[fieldName] ?? null;
+  };
 
-  // Handle monthly income display value - shows formatted value when not focused
+  const getFieldLabel = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.label ?? fallback;
+  };
+
+  const getFieldPlaceholder = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.placeholder ?? fallback;
+  };
+
+  const getFieldHelperText = (fieldName: string, fallback: string): string => {
+    const config = getFieldConfig(fieldName);
+    return config?.helperText ?? fallback;
+  };
+
   const getDisplayValue = useCallback((value: number | undefined, isFocused: boolean): string => {
     if (value === undefined || value === null) return '';
     if (value === 0) return isFocused ? '' : '';
     if (isFocused) {
-      // When focused, show raw number for easy editing
       return value.toString();
     }
-    // When not focused, show formatted value
-    return formatCurrencyInput(value, currencyConfig.code);
-  }, [currencyConfig.code]);
+    return formatCurrencyInput(value, currencyConfig?.code ?? 'USD');
+  }, [currencyConfig?.code]);
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
       <Typography variant="h5" component="h2" sx={{ mb: 2 }}>
-        {content?.title || 'Family & Financial Information'}
+        {content?.title ?? 'Family & Financial Information'}
       </Typography>
 
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-        {content?.description || ''}
+        {content?.description ?? ''}
       </Typography>
 
       <Grid container spacing={3}>
@@ -147,29 +140,31 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
             name="maritalStatus"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth error={Boolean(errors.maritalStatus)} required>
+              <FormControl fullWidth error={Boolean(errors?.maritalStatus)} required>
                 <InputLabel htmlFor="marital-status-select">
-                  {fields?.maritalStatus?.label || 'Marital Status'}
+                  {getFieldLabel('maritalStatus', 'Marital Status')}
                 </InputLabel>
                 <Select
                   {...field}
-                  label={fields?.maritalStatus?.label || 'Marital Status'}
+                  label={getFieldLabel('maritalStatus', 'Marital Status')}
                   slotProps={{
                     input: {
                       id: 'marital-status-select',
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.maritalStatus),
+                      'aria-invalid': Boolean(errors?.maritalStatus),
                     },
                   }}
                 >
-                  {MARITAL_STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
+                  {isNotEmptyArray(MARITAL_STATUS_OPTIONS)
+                    ? MARITAL_STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))
+                    : null}
                 </Select>
-                {errors.maritalStatus && (
-                  <FormHelperText>{errors.maritalStatus.message}</FormHelperText>
+                {errors?.maritalStatus && (
+                  <FormHelperText>{errors?.maritalStatus?.message}</FormHelperText>
                 )}
               </FormControl>
             )}
@@ -186,28 +181,28 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
                 {...field}
                 fullWidth
                 type="number"
-                label={fields?.dependents?.label || 'Number of Dependents'}
-                placeholder={fields?.dependents?.placeholder || 'Enter number of dependents'}
-                helperText={fields?.dependents?.helperText || ''}
-                error={Boolean(errors.dependents)}
+                label={getFieldLabel('dependents', 'Number of Dependents')}
+                placeholder={getFieldPlaceholder('dependents', 'Enter number of dependents')}
+                helperText={getFieldHelperText('dependents', '')}
+                error={Boolean(errors?.dependents)}
                 required
                 slotProps={{
                   htmlInput: {
                     min: 0,
                     'aria-required': true,
-                    'aria-invalid': Boolean(errors.dependents),
+                    'aria-invalid': Boolean(errors?.dependents),
                   },
                 }}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
+                  const value = parseInt(e?.target?.value ?? '0', 10);
                   field.onChange(isNaN(value) ? 0 : value);
                 }}
               />
             )}
           />
-          {errors.dependents && (
+          {errors?.dependents && (
             <FormHelperText error>
-              {errors.dependents.message}
+              {errors?.dependents?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -218,29 +213,31 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
             name="employmentStatus"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth error={Boolean(errors.employmentStatus)} required>
+              <FormControl fullWidth error={Boolean(errors?.employmentStatus)} required>
                 <InputLabel htmlFor="employment-status-select">
-                  {fields?.employmentStatus?.label || 'Employment Status'}
+                  {getFieldLabel('employmentStatus', 'Employment Status')}
                 </InputLabel>
                 <Select
                   {...field}
-                  label={fields?.employmentStatus?.label || 'Employment Status'}
+                  label={getFieldLabel('employmentStatus', 'Employment Status')}
                   slotProps={{
                     input: {
                       id: 'employment-status-select',
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.employmentStatus),
+                      'aria-invalid': Boolean(errors?.employmentStatus),
                     },
                   }}
                 >
-                  {EMPLOYMENT_STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
+                  {isNotEmptyArray(EMPLOYMENT_STATUS_OPTIONS)
+                    ? EMPLOYMENT_STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))
+                    : null}
                 </Select>
-                {errors.employmentStatus && (
-                  <FormHelperText>{errors.employmentStatus.message}</FormHelperText>
+                {errors?.employmentStatus && (
+                  <FormHelperText>{errors?.employmentStatus?.message}</FormHelperText>
                 )}
               </FormControl>
             )}
@@ -254,25 +251,23 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
             control={control}
             render={({ field }) => {
               // Track focus state for better UX
-              const [isFocused, setIsFocused] = React.useState(false);
+              const [isFocused, setIsFocused] = useState(false);
 
-              // Display raw value when focused for easy editing, formatted when blurred
               const displayValue = getDisplayValue(field.value, isFocused);
 
               return (
                 <TextField
                   {...field}
                   fullWidth
-                  label={fields?.monthlyIncome?.label || 'Monthly Income'}
-                  placeholder={fields?.monthlyIncome?.placeholder || 'Enter your monthly income'}
-                  helperText={fields?.monthlyIncome?.helperText || `${currencySymbol} ${currencyConfig.code}`}
-                  error={Boolean(errors.monthlyIncome)}
+                  label={getFieldLabel('monthlyIncome', 'Monthly Income')}
+                  placeholder={getFieldPlaceholder('monthlyIncome', 'Enter your monthly income')}
+                  helperText={getFieldHelperText('monthlyIncome', `${currencySymbol} ${currencyConfig?.code ?? ''}`)}
+                  error={Boolean(errors?.monthlyIncome)}
                   required
                   value={displayValue}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => {
                     setIsFocused(false);
-                    // Ensure value is properly saved on blur
                     if (field.value === undefined || field.value === null) {
                       field.onChange(0);
                     }
@@ -282,9 +277,8 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
                       min: 0,
                       step: 'any',
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.monthlyIncome),
+                      'aria-invalid': Boolean(errors?.monthlyIncome),
                       inputMode: 'numeric',
-                      // Hide spin buttons for better UX with large numbers
                       sx: {
                         '&::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
                         '&::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
@@ -300,17 +294,17 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
                     },
                   }}
                   onChange={(e) => {
-                    const rawValue = e.target.value;
-                    const parsed = parseCurrencyInput(rawValue, currencyConfig.code);
+                    const rawValue = e?.target?.value ?? '';
+                    const parsed = parseCurrencyInput(rawValue, currencyConfig?.code ?? 'USD');
                     field.onChange(isNaN(parsed) ? 0 : parsed);
                   }}
                 />
               );
             }}
           />
-          {errors.monthlyIncome && (
+          {errors?.monthlyIncome && (
             <FormHelperText error>
-              {errors.monthlyIncome.message}
+              {errors?.monthlyIncome?.message}
             </FormHelperText>
           )}
         </Grid>
@@ -321,29 +315,31 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
             name="housingStatus"
             control={control}
             render={({ field }) => (
-              <FormControl fullWidth error={Boolean(errors.housingStatus)} required>
+              <FormControl fullWidth error={Boolean(errors?.housingStatus)} required>
                 <InputLabel htmlFor="housing-status-select">
-                  {fields?.housingStatus?.label || 'Housing Status'}
+                  {getFieldLabel('housingStatus', 'Housing Status')}
                 </InputLabel>
                 <Select
                   {...field}
-                  label={fields?.housingStatus?.label || 'Housing Status'}
+                  label={getFieldLabel('housingStatus', 'Housing Status')}
                   slotProps={{
                     input: {
                       id: 'housing-status-select',
                       'aria-required': true,
-                      'aria-invalid': Boolean(errors.housingStatus),
+                      'aria-invalid': Boolean(errors?.housingStatus),
                     },
                   }}
                 >
-                  {HOUSING_STATUS_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
+                  {isNotEmptyArray(HOUSING_STATUS_OPTIONS)
+                    ? HOUSING_STATUS_OPTIONS.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option}
+                        </MenuItem>
+                      ))
+                    : null}
                 </Select>
-                {errors.housingStatus && (
-                  <FormHelperText>{errors.housingStatus.message}</FormHelperText>
+                {errors?.housingStatus && (
+                  <FormHelperText>{errors?.housingStatus?.message}</FormHelperText>
                 )}
               </FormControl>
             )}

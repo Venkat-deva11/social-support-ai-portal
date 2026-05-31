@@ -1,55 +1,47 @@
+/**
+ * Sitecore Content Hooks
+ * Custom hooks for accessing localized CMS content
+ */
+
 import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { getPageContent, getCommonContent, getLanguageDirection } from '../utils/sitecoreContentHelper';
-import type { SitecorePageContent } from '../types';
+import type { SitecorePageContent, Language } from '../types';
 import type { RootState } from '../app/store';
 
 /**
  * Custom hook for accessing Sitecore content
  * Provides a clean interface for components to access localized content
- *
- * @param componentId - The unique identifier for the page/component content
- * @returns The page content object with all fields localized
  */
 export function useSitecoreContent(componentId: string): SitecorePageContent | null {
-  const language = useSelector((state: RootState) => state.application.language);
+  const language = useSelector((state: RootState) => state?.application?.language);
 
-  return getPageContent(componentId, language);
+  return getPageContent(componentId, language ?? 'en');
 }
 
-/**
- * Hook to access common/shared content
- */
+
 export function useCommonContent(key: string): string | null {
-  const language = useSelector((state: RootState) => state.application.language);
+  const language = useSelector((state: RootState) => state?.application?.language);
 
-  return getCommonContent(key, language);
+  return getCommonContent(key, language ?? 'en');
 }
 
-/**
- * Hook to get current language direction
- */
+
 export function useLanguageDirection(): 'ltr' | 'rtl' {
-  const language = useSelector((state: RootState) => state.application.language);
+  const language = useSelector((state: RootState) => state?.application?.language);
 
-  return getLanguageDirection(language);
+  return getLanguageDirection(language ?? 'en');
 }
 
-/**
- * Hook to get page content with manual language override
- * Useful when you need to preview a different language
- */
+
 export function useSitecoreContentWithLanguage(
   componentId: string,
-  language: 'en' | 'ar'
+  language: Language
 ): SitecorePageContent | null {
   return getPageContent(componentId, language);
 }
 
-/**
- * Helper hook to access form field content
- * Returns the field configuration for a specific field
- */
+
 export function useFormFieldContent(
   componentId: string,
   fieldName: string
@@ -60,18 +52,17 @@ export function useFormFieldContent(
     return null;
   }
 
-  const fields = content.fields as Record<string, Record<string, unknown>>;
-  return fields[fieldName] || null;
+  const fields = content?.fields as Record<string, Record<string, unknown>> | undefined;
+  if (!fields) return null;
+
+  return fields[fieldName] ?? null;
 }
 
-/**
- * Helper hook for i18n interpolation
- * Replaces {{count}} placeholders with actual values
- */
+
 export function useTranslationWithParams() {
   const t = useCallback((text: string, params?: Record<string, string | number>): string => {
-    if (!params) {
-      return text;
+    if (!params || !text) {
+      return text ?? '';
     }
 
     let result = text;

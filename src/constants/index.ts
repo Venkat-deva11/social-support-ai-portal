@@ -134,3 +134,5 @@ export const COUNTRIES = [
   'Sudan',
   'Other',
 ] as const;
+
+export const MAX_TEXT=2000
