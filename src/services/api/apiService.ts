@@ -7,6 +7,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { API_TIMEOUT } from '../../constants';
 import { JSONPLACEHOLDER_API } from '../apiEndpoints';
 import type { ApiResponse, SubmissionData, MockSubmissionResponse } from '../../types';
+import { API_MESSAGES } from '../../messages';
 
 /**
  * Axios instance with default configuration
@@ -38,7 +39,7 @@ export const ApiService = {
       if (!data?.personalInfo?.fullName) {
         return {
           success: false,
-          error: 'Invalid submission data: full name is required',
+          error: API_MESSAGES.INVALID_SUBMISSION_DATA,
         };
       }
 
@@ -71,19 +72,19 @@ export const ApiService = {
         // Server responded with error status
         return {
           success: false,
-          error: `Server error: ${axiosError.response.status}`,
+          error: API_MESSAGES.SERVER_ERROR(axiosError.response.status),
         };
       } else if (axiosError?.request) {
         // Request was made but no response received
         return {
           success: false,
-          error: 'Network error. Please check your connection.',
+          error: API_MESSAGES.NETWORK_ERROR,
         };
       } else {
         // Something else happened
         return {
           success: false,
-          error: 'An unexpected error occurred. Please try again.',
+          error: API_MESSAGES.UNEXPECTED_ERROR,
         };
       }
     }

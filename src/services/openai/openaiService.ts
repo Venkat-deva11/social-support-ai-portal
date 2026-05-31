@@ -14,6 +14,7 @@ import type {
   FamilyFinancialInfo,
 } from '../../types';
 import { logTokenUsage } from '../../utils/openAIPromptHelper';
+import { OPENAI_MESSAGES } from '../../messages';
 
 // OpenAI API Configuration from environment variables
 const API_KEY = (import.meta.env.VITE_OPENAI_API_KEY as string) ?? '';
@@ -85,7 +86,7 @@ export const OpenAIService = {
     if (!API_KEY || API_KEY === '' || API_KEY === 'your_openai_api_key_here') {
       return {
         success: false,
-        error: 'OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in your environment.',
+        error: OPENAI_MESSAGES.API_KEY_NOT_CONFIGURED,
       };
     }
 
@@ -134,7 +135,7 @@ export const OpenAIService = {
         if (!generatedText) {
           return {
             success: false,
-            error: 'Received an empty response from the AI. Please try again.',
+            error: OPENAI_MESSAGES.EMPTY_RESPONSE,
           };
         }
 
@@ -146,7 +147,7 @@ export const OpenAIService = {
 
       return {
         success: false,
-        error: 'Received an invalid response from the AI service.',
+        error: OPENAI_MESSAGES.INVALID_RESPONSE,
       };
     } catch (error) {
       const axiosError = error as AxiosError;
@@ -157,39 +158,39 @@ export const OpenAIService = {
         if (status === 401) {
           return {
             success: false,
-            error: 'Invalid OpenAI API key. Please check your configuration.',
+            error: OPENAI_MESSAGES.INVALID_API_KEY,
           };
         } else if (status === 429) {
           return {
             success: false,
-            error: 'Too many requests. Please wait a moment and try again.',
+            error: OPENAI_MESSAGES.TOO_MANY_REQUESTS,
           };
         } else if ([500, 502, 503, 504].includes(status)) {
           return {
             success: false,
-            error: 'OpenAI service is experiencing issues. Please try again later.',
+            error: OPENAI_MESSAGES.SERVICE_UNAVAILABLE,
           };
         }
 
         return {
           success: false,
-          error: `AI service error: ${status}`,
+          error: OPENAI_MESSAGES.SERVICE_ERROR(status),
         };
       } else if (axiosError?.code === 'ECONNABORTED') {
         return {
           success: false,
-          error: 'Request timed out. The AI took too long to respond. Please try again.',
+          error: OPENAI_MESSAGES.REQUEST_TIMEOUT,
         };
       } else if (axiosError?.message?.includes('Network Error')) {
         return {
           success: false,
-          error: 'Network error. Please check your internet connection.',
+          error: OPENAI_MESSAGES.NETWORK_ERROR,
         };
       }
 
       return {
         success: false,
-        error: 'An unexpected error occurred while generating content. Please try again.',
+        error: OPENAI_MESSAGES.UNEXPECTED_ERROR,
       };
     }
   },

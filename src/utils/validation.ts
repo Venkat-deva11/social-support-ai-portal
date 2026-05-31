@@ -5,44 +5,45 @@
 
 import * as yup from 'yup';
 import { FORM_LIMITS } from '../constants';
+import { VALIDATION_MESSAGES } from '../messages';
 
 // Personal Information Schema
 export const personalInfoSchema = yup.object({
   fullName: yup
     .string()
-    .required('Full name is required')
+    .required(VALIDATION_MESSAGES.FULL_NAME_REQUIRED)
     .min(
       FORM_LIMITS.FULL_NAME_MIN,
-      `Full name must be at least ${FORM_LIMITS.FULL_NAME_MIN} characters`
+      VALIDATION_MESSAGES.FULL_NAME_MIN(FORM_LIMITS.FULL_NAME_MIN)
     )
     .max(
       FORM_LIMITS.FULL_NAME_MAX,
-      `Full name cannot exceed ${FORM_LIMITS.FULL_NAME_MAX} characters`
+      VALIDATION_MESSAGES.FULL_NAME_MAX(FORM_LIMITS.FULL_NAME_MAX)
     )
-    .matches(/^[a-zA-Z0-9\s]+$/, 'Only alphanumeric characters allowed'),
+    .matches(/^[a-zA-Z0-9\s]+$/, VALIDATION_MESSAGES.FULL_NAME_ALPHANUMERIC),
 
   nationalId: yup
     .string()
-    .required('National ID is required')
+    .required(VALIDATION_MESSAGES.NATIONAL_ID_REQUIRED)
     .min(
       FORM_LIMITS.NATIONAL_ID_MIN,
-      `National ID must be at least ${FORM_LIMITS.NATIONAL_ID_MIN} characters`
+      VALIDATION_MESSAGES.NATIONAL_ID_MIN(FORM_LIMITS.NATIONAL_ID_MIN)
     )
     .max(
       FORM_LIMITS.NATIONAL_ID_MAX,
-      `National ID cannot exceed ${FORM_LIMITS.NATIONAL_ID_MAX} characters`
+      VALIDATION_MESSAGES.NATIONAL_ID_MAX(FORM_LIMITS.NATIONAL_ID_MAX)
     )
-    .matches(/^[a-zA-Z0-9]+$/, 'Only alphanumeric characters allowed'),
+    .matches(/^[a-zA-Z0-9]+$/, VALIDATION_MESSAGES.NATIONAL_ID_ALPHANUMERIC),
 
   dateOfBirth: yup
     .string()
-    .required('Date of birth is required')
-    .test('valid-date', 'Please enter a valid date', (value) => {
+    .required(VALIDATION_MESSAGES.DATE_OF_BIRTH_REQUIRED)
+    .test('valid-date', VALIDATION_MESSAGES.DATE_OF_BIRTH_INVALID, (value) => {
       if (!value) return false;
       const date = new Date(value);
       return !isNaN(date.getTime());
     })
-    .test('age-18', 'Applicant must be 18 years or older', (value) => {
+    .test('age-18', VALIDATION_MESSAGES.AGE_18_REQUIRED, (value) => {
       if (!value) return false;
       const dob = new Date(value);
       const today = new Date();
@@ -54,91 +55,91 @@ export const personalInfoSchema = yup.object({
       return age >= 18;
     }),
 
-  gender: yup.string().required('Gender is required'),
+  gender: yup.string().required(VALIDATION_MESSAGES.GENDER_REQUIRED),
 
   address: yup
     .string()
-    .required('Address is required')
+    .required(VALIDATION_MESSAGES.ADDRESS_REQUIRED)
     .min(
       FORM_LIMITS.ADDRESS_MIN,
-      `Address must be at least ${FORM_LIMITS.ADDRESS_MIN} characters`
+      VALIDATION_MESSAGES.ADDRESS_MIN(FORM_LIMITS.ADDRESS_MIN)
     ),
 
-  city: yup.string().required('City is required'),
+  city: yup.string().required(VALIDATION_MESSAGES.CITY_REQUIRED),
 
-  state: yup.string().required('State/Province is required'),
+  state: yup.string().required(VALIDATION_MESSAGES.STATE_REQUIRED),
 
-  country: yup.string().required('Country is required'),
+  country: yup.string().required(VALIDATION_MESSAGES.COUNTRY_REQUIRED),
 
   phone: yup
     .string()
-    .required('Phone number is required')
+    .required(VALIDATION_MESSAGES.PHONE_REQUIRED)
     .matches(
       /^\+?[\d\s-()]{10,}$/,
-      'Please enter a valid phone number'
+      VALIDATION_MESSAGES.PHONE_INVALID
     ),
 
   email: yup
     .string()
-    .required('Email address is required')
-    .email('Please enter a valid email address'),
+    .required(VALIDATION_MESSAGES.EMAIL_REQUIRED)
+    .email(VALIDATION_MESSAGES.EMAIL_INVALID),
 });
 
 // Family Financial Schema
 export const familyFinancialSchema = yup.object({
-  maritalStatus: yup.string().required('Marital status is required'),
+  maritalStatus: yup.string().required(VALIDATION_MESSAGES.MARITAL_STATUS_REQUIRED),
 
   dependents: yup
     .number()
-    .required('Number of dependents is required')
-    .min(0, 'Please enter a valid number (0 or more)'),
+    .required(VALIDATION_MESSAGES.DEPENDENTS_REQUIRED)
+    .min(0, VALIDATION_MESSAGES.DEPENDENTS_INVALID),
 
-  employmentStatus: yup.string().required('Employment status is required'),
+  employmentStatus: yup.string().required(VALIDATION_MESSAGES.EMPLOYMENT_STATUS_REQUIRED),
 
   monthlyIncome: yup
     .number()
-    .required('Monthly income is required')
-    .min(0, 'Please enter a valid positive number'),
+    .required(VALIDATION_MESSAGES.MONTHLY_INCOME_REQUIRED)
+    .min(0, VALIDATION_MESSAGES.MONTHLY_INCOME_INVALID),
 
-  housingStatus: yup.string().required('Housing status is required'),
+  housingStatus: yup.string().required(VALIDATION_MESSAGES.HOUSING_STATUS_REQUIRED),
 });
 
 // Situation Descriptions Schema
 export const situationDescriptionsSchema = yup.object({
   financialSituation: yup
     .string()
-    .required('Please describe your current financial situation')
+    .required(VALIDATION_MESSAGES.FINANCIAL_SITUATION_REQUIRED)
     .min(
       FORM_LIMITS.TEXTAREA_MIN,
-      `Description must be at least ${FORM_LIMITS.TEXTAREA_MIN} characters`
+      VALIDATION_MESSAGES.FINANCIAL_SITUATION_MIN(FORM_LIMITS.TEXTAREA_MIN)
     )
     .max(
       FORM_LIMITS.TEXTAREA_MAX,
-      `Description cannot exceed ${FORM_LIMITS.TEXTAREA_MAX} characters`
+      VALIDATION_MESSAGES.FINANCIAL_SITUATION_MAX(FORM_LIMITS.TEXTAREA_MAX)
     ),
 
   employmentCircumstances: yup
     .string()
-    .required('Please describe your employment circumstances')
+    .required(VALIDATION_MESSAGES.EMPLOYMENT_CIRCUMSTANCES_REQUIRED)
     .min(
       FORM_LIMITS.TEXTAREA_MIN,
-      `Description must be at least ${FORM_LIMITS.TEXTAREA_MIN} characters`
+      VALIDATION_MESSAGES.EMPLOYMENT_CIRCUMSTANCES_MIN(FORM_LIMITS.TEXTAREA_MIN)
     )
     .max(
       FORM_LIMITS.TEXTAREA_MAX,
-      `Description cannot exceed ${FORM_LIMITS.TEXTAREA_MAX} characters`
+      VALIDATION_MESSAGES.EMPLOYMENT_CIRCUMSTANCES_MAX(FORM_LIMITS.TEXTAREA_MAX)
     ),
 
   reasonForApplying: yup
     .string()
-    .required('Please explain your reason for applying')
+    .required(VALIDATION_MESSAGES.REASON_FOR_APPLYING_REQUIRED)
     .min(
       FORM_LIMITS.TEXTAREA_MIN,
-      `Description must be at least ${FORM_LIMITS.TEXTAREA_MIN} characters`
+      VALIDATION_MESSAGES.REASON_FOR_APPLYING_MIN(FORM_LIMITS.TEXTAREA_MIN)
     )
     .max(
       FORM_LIMITS.TEXTAREA_MAX,
-      `Description cannot exceed ${FORM_LIMITS.TEXTAREA_MAX} characters`
+      VALIDATION_MESSAGES.REASON_FOR_APPLYING_MAX(FORM_LIMITS.TEXTAREA_MAX)
     ),
 });
 
