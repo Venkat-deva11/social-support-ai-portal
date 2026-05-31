@@ -118,9 +118,15 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
     errorMessage: Record<string, string>;
   }>;
 
-  // Handle monthly income display value
-  const getDisplayValue = useCallback((value: number): string => {
-    if (value === 0) return '';
+  // Handle monthly income display value - shows formatted value when not focused
+  const getDisplayValue = useCallback((value: number | undefined, isFocused: boolean): string => {
+    if (value === undefined || value === null) return '';
+    if (value === 0) return isFocused ? '' : '';
+    if (isFocused) {
+      // When focused, show raw number for easy editing
+      return value.toString();
+    }
+    // When not focused, show formatted value
     return formatCurrencyInput(value, currencyConfig.code);
   }, [currencyConfig.code]);
 
@@ -247,8 +253,11 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
             name="monthlyIncome"
             control={control}
             render={({ field }) => {
-              // Display formatted value (e.g., "78,496,869" for JPY or "78,496,869.00" for USD)
-              const displayValue = getDisplayValue(field.value);
+              // Track focus state for better UX
+              const [isFocused, setIsFocused] = React.useState(false);
+
+              // Display raw value when focused for easy editing, formatted when blurred
+              const displayValue = getDisplayValue(field.value, isFocused);
 
               return (
                 <TextField
@@ -256,17 +265,31 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
                   fullWidth
                   label={fields?.monthlyIncome?.label || 'Monthly Income'}
                   placeholder={fields?.monthlyIncome?.placeholder || 'Enter your monthly income'}
-                  helperText={fields?.monthlyIncome?.helperText || `${currencySymbol} symbol shown`}
+                  helperText={fields?.monthlyIncome?.helperText || `${currencySymbol} ${currencyConfig.code}`}
                   error={Boolean(errors.monthlyIncome)}
                   required
                   value={displayValue}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => {
+                    setIsFocused(false);
+                    // Ensure value is properly saved on blur
+                    if (field.value === undefined || field.value === null) {
+                      field.onChange(0);
+                    }
+                  }}
                   slotProps={{
                     htmlInput: {
                       min: 0,
-                      step: currencyDecimals === 0 ? 1000 : 0.01,
+                      step: 'any',
                       'aria-required': true,
                       'aria-invalid': Boolean(errors.monthlyIncome),
                       inputMode: 'numeric',
+                      // Hide spin buttons for better UX with large numbers
+                      sx: {
+                        '&::-webkit-outer-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                        '&::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                        MozAppearance: 'textfield',
+                      },
                     },
                     input: {
                       startAdornment: (
@@ -279,7 +302,7 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
                   onChange={(e) => {
                     const rawValue = e.target.value;
                     const parsed = parseCurrencyInput(rawValue, currencyConfig.code);
-                    field.onChange(parsed);
+                    field.onChange(isNaN(parsed) ? 0 : parsed);
                   }}
                 />
               );
