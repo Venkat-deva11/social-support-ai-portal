@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,9 +27,9 @@ import { STEPS, STEP_NAMES } from '../constants';
 
 import ApplicationStepper from '../components/wizard/ApplicationStepper';
 import WizardNavigation from '../components/wizard/WizardNavigation';
-import PersonalInfoForm from '../components/forms/PersonalInfoForm';
-import FamilyFinancialForm from '../components/forms/FamilyFinancialForm';
-import SituationDescriptionsForm from '../components/forms/SituationDescriptionsForm';
+import PersonalInfoForm, { PersonalInfoFormRef } from '../components/forms/PersonalInfoForm';
+import FamilyFinancialForm, { FamilyFinancialFormRef } from '../components/forms/FamilyFinancialForm';
+import SituationDescriptionsForm, { SituationDescriptionsFormRef } from '../components/forms/SituationDescriptionsForm';
 
 import {
   personalInfoSchema,
@@ -51,8 +51,27 @@ const ApplicationWizard: React.FC = () => {
   } = useSelector((state: RootState) => state.application);
 
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const prevStepRef = useRef(currentStep);
+
+  // Refs for each form to trigger validation
+  const personalInfoRef = useRef<PersonalInfoFormRef>(null);
+  const familyFinancialRef = useRef<FamilyFinancialFormRef>(null);
+  const situationDescriptionsRef = useRef<SituationDescriptionsFormRef>(null);
 
   const TOTAL_STEPS = 3;
+
+  const getFormRef = () => {
+    switch (currentStep) {
+      case STEPS.PERSONAL_INFO:
+        return personalInfoRef;
+      case STEPS.FAMILY_FINANCIAL:
+        return familyFinancialRef;
+      case STEPS.SITUATION_DESCRIPTIONS:
+        return situationDescriptionsRef;
+      default:
+        return null;
+    }
+  };
 
   // Restore saved application on mount
   useEffect(() => {
@@ -72,6 +91,13 @@ const ApplicationWizard: React.FC = () => {
   useEffect(() => {
     StorageService.saveApplication(currentStep, formData, language);
   }, [currentStep, formData, language]);
+
+  // Reset refs when step changes
+  useEffect(() => {
+    if (prevStepRef.current !== currentStep) {
+      prevStepRef.current = currentStep;
+    }
+  }, [currentStep]);
 
   const validateStep = useCallback(
     async (step: number): Promise<boolean> => {
@@ -102,7 +128,13 @@ const ApplicationWizard: React.FC = () => {
         await schema.validate(dataForValidation, { abortEarly: false });
         return true;
       } catch (error: any) {
-        toast.error('Please fix the errors before proceeding.');
+        // Extract errors from yup validation
+        if (error.inner && Array.isArray(error.inner)) {
+          // Show first error as toast (for user feedback)
+          if (error.inner.length > 0) {
+            toast.error(error.inner[0].message);
+          }
+        }
         return false;
       }
     },
@@ -110,6 +142,18 @@ const ApplicationWizard: React.FC = () => {
   );
 
   const handleNext = useCallback(async () => {
+    // Trigger form validation first to show field-level errors
+    const formRef = getFormRef();
+    let isFormValid = true;
+
+    if (formRef?.current?.triggerValidation) {
+      isFormValid = await formRef.current.triggerValidation();
+    }
+
+    if (!isFormValid) {
+      return; // Don't proceed if form is invalid - field errors will show
+    }
+
     const isValid = await validateStep(currentStep);
 
     if (isValid) {
@@ -127,11 +171,22 @@ const ApplicationWizard: React.FC = () => {
     }
   }, [currentStep, dispatch]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmitForm = useCallback(async () => {
+    // Trigger form validation first
+    const formRef = getFormRef();
+    let isFormValid = true;
+
+    if (formRef?.current?.triggerValidation) {
+      isFormValid = await formRef.current.triggerValidation();
+    }
+
+    if (!isFormValid) {
+      return; // Don't proceed if form is invalid
+    }
+
     const isValid = await validateStep(currentStep);
 
     if (!isValid) {
-      toast.error('Please fix the errors before submitting.');
       return;
     }
 
@@ -162,11 +217,11 @@ const ApplicationWizard: React.FC = () => {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case STEPS.PERSONAL_INFO:
-        return <PersonalInfoForm />;
+        return <PersonalInfoForm ref={personalInfoRef} />;
       case STEPS.FAMILY_FINANCIAL:
-        return <FamilyFinancialForm />;
+        return <FamilyFinancialForm ref={familyFinancialRef} />;
       case STEPS.SITUATION_DESCRIPTIONS:
-        return <SituationDescriptionsForm />;
+        return <SituationDescriptionsForm ref={situationDescriptionsRef} />;
       default:
         return null;
     }
@@ -249,6 +304,7 @@ const ApplicationWizard: React.FC = () => {
           isPreviousDisabled={currentStep === 1}
           showSubmit={currentStep === TOTAL_STEPS}
           isSubmitting={isSubmitting}
+          onSubmit={handleSubmitForm}
         />
       </Paper>
 

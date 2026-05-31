@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -23,13 +23,15 @@ import { updateSituationDescriptions } from '../../features/application/applicat
 import AIAssistanceModal from '../ai/AIAssistanceModal';
 import type { AIAuthoringField } from '../../services/openai/openaiService';
 
+export interface SituationDescriptionsFormRef {
+  triggerValidation: () => Promise<boolean>;
+}
+
 interface SituationDescriptionsFormProps {
   defaultValues?: Partial<SituationDescriptionsFormData>;
 }
 
-const SituationDescriptionsForm: React.FC<SituationDescriptionsFormProps> = ({
-  defaultValues,
-}) => {
+const SituationDescriptionsForm = forwardRef<SituationDescriptionsFormRef, SituationDescriptionsFormProps>(({ defaultValues }, ref) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const content = useSitecoreContent('situation-description-page');
@@ -48,6 +50,7 @@ const SituationDescriptionsForm: React.FC<SituationDescriptionsFormProps> = ({
     formState: { errors },
     watch,
     setValue,
+    trigger,
   } = useForm<SituationDescriptionsFormData>({
     resolver: yupResolver(situationDescriptionsSchema) as any,
     mode: 'onChange',
@@ -62,6 +65,11 @@ const SituationDescriptionsForm: React.FC<SituationDescriptionsFormProps> = ({
   });
 
   const watchedValues = watch();
+
+  // Expose triggerValidation to parent
+  useImperativeHandle(ref, () => ({
+    triggerValidation: () => trigger(),
+  }), [trigger]);
 
   // Auto-save on field changes
   useEffect(() => {
@@ -232,6 +240,8 @@ const SituationDescriptionsForm: React.FC<SituationDescriptionsFormProps> = ({
       />
     </Box>
   );
-};
+});
+
+SituationDescriptionsForm.displayName = 'SituationDescriptionsForm';
 
 export default SituationDescriptionsForm;

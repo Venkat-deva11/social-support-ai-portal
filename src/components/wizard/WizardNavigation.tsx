@@ -13,6 +13,7 @@ interface WizardNavigationProps {
   totalSteps: number;
   onNext?: () => void;
   onPrevious?: () => void;
+  onSubmit?: () => void;
   isNextDisabled?: boolean;
   isPreviousDisabled?: boolean;
   showSubmit?: boolean;
@@ -24,6 +25,7 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
   totalSteps,
   onNext,
   onPrevious,
+  onSubmit,
   isNextDisabled = false,
   isPreviousDisabled = false,
   showSubmit = false,
@@ -97,7 +99,7 @@ const WizardNavigation: React.FC<WizardNavigationProps> = ({
           <Button
             variant="contained"
             color="secondary"
-            type="submit"
+            onClick={onSubmit}
             disabled={isSubmitting}
             aria-label={t('common.submit')}
           >

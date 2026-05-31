@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -22,11 +22,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updatePersonalInfo } from '../../features/application/applicationSlice';
 
+export interface PersonalInfoFormRef {
+  triggerValidation: () => Promise<boolean>;
+}
+
 interface PersonalInfoFormProps {
   defaultValues?: Partial<PersonalInfoFormData>;
 }
 
-const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ defaultValues }) => {
+const PersonalInfoForm = forwardRef<PersonalInfoFormRef, PersonalInfoFormProps>(({ defaultValues }, ref) => {
   const dispatch = useDispatch();
   const content = useSitecoreContent('personal-information-page');
   const formData = useSelector((state: RootState) => state.application.formData.personalInfo);
@@ -36,6 +40,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ defaultValues }) =>
     handleSubmit,
     formState: { errors },
     watch,
+    trigger,
   } = useForm<PersonalInfoFormData>({
     resolver: yupResolver(personalInfoSchema) as any,
     mode: 'onChange',
@@ -55,13 +60,18 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ defaultValues }) =>
 
   const watchedValues = watch();
 
+  // Expose triggerValidation to parent
+  useImperativeHandle(ref, () => ({
+    triggerValidation: () => trigger(),
+  }), [trigger]);
+
   // Auto-save on field changes
   useEffect(() => {
     const subscription = watch((data) => {
       dispatch(updatePersonalInfo(data as PersonalInfoFormData));
     });
     return () => {
-      // subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [watch, dispatch]);
 
@@ -405,6 +415,8 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ defaultValues }) =>
       </Grid>
     </Box>
   );
-};
+});
+
+PersonalInfoForm.displayName = 'PersonalInfoForm';
 
 export default PersonalInfoForm;

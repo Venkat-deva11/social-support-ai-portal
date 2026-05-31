@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -27,11 +27,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updateFamilyFinancialInfo } from '../../features/application/applicationSlice';
 
+export interface FamilyFinancialFormRef {
+  triggerValidation: () => Promise<boolean>;
+}
+
 interface FamilyFinancialFormProps {
   defaultValues?: Partial<FamilyFinancialFormData>;
 }
 
-const FamilyFinancialForm: React.FC<FamilyFinancialFormProps> = ({ defaultValues }) => {
+const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFormProps>(({ defaultValues }, ref) => {
   const dispatch = useDispatch();
   const content = useSitecoreContent('family-financial-page');
   const formData = useSelector(
@@ -43,6 +47,7 @@ const FamilyFinancialForm: React.FC<FamilyFinancialFormProps> = ({ defaultValues
     handleSubmit,
     formState: { errors },
     watch,
+    trigger,
   } = useForm<FamilyFinancialFormData>({
     resolver: yupResolver(familyFinancialSchema) as any,
     mode: 'onChange',
@@ -57,13 +62,18 @@ const FamilyFinancialForm: React.FC<FamilyFinancialFormProps> = ({ defaultValues
 
   const watchedValues = watch();
 
+  // Expose triggerValidation to parent
+  useImperativeHandle(ref, () => ({
+    triggerValidation: () => trigger(),
+  }), [trigger]);
+
   // Auto-save on field changes
   useEffect(() => {
     const subscription = watch((data) => {
       dispatch(updateFamilyFinancialInfo(data as FamilyFinancialFormData));
     });
     return () => {
-      // subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [watch, dispatch]);
 
@@ -273,6 +283,8 @@ const FamilyFinancialForm: React.FC<FamilyFinancialFormProps> = ({ defaultValues
       </Grid>
     </Box>
   );
-};
+});
+
+FamilyFinancialForm.displayName = 'FamilyFinancialForm';
 
 export default FamilyFinancialForm;
