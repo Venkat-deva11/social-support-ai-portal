@@ -183,7 +183,7 @@
           "monthlyIncome": {
             "label": "Monthly Income",
             "placeholder": "Enter your monthly income",
-            "helperText": "Enter your total monthly income before taxes",
+            "helperText": "Enter your total monthly income",
             "errorMessage": {
               "required": "Monthly income is required",
               "positive": "Please enter a valid positive number"

@@ -1,4 +1,4 @@
-import React, { useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, forwardRef, useImperativeHandle, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -26,6 +26,13 @@ import { useSitecoreContent } from '../../hooks/useSitecoreContent';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { updateFamilyFinancialInfo } from '../../features/application/applicationSlice';
+import {
+  getCurrencyConfig,
+  formatCurrencyInput,
+  parseCurrencyInput,
+  getCurrencySymbol,
+  getCurrencyDecimals,
+} from '../../utils/currencyHelper';
 
 export interface FamilyFinancialFormRef {
   triggerValidation: () => Promise<boolean>;
@@ -41,6 +48,14 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
   const formData = useSelector(
     (state: RootState) => state.application.formData.familyFinancialInfo
   );
+  const country = useSelector(
+    (state: RootState) => state.application.formData.personalInfo?.country
+  ) || 'United States';
+
+  // Get currency config based on country
+  const currencyConfig = getCurrencyConfig(country);
+  const currencySymbol = getCurrencySymbol(country);
+  const currencyDecimals = getCurrencyDecimals(country);
 
   const {
     control,
@@ -49,6 +64,7 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
     watch,
     trigger,
     reset,
+    setValue,
   } = useForm<FamilyFinancialFormData>({
     resolver: yupResolver(familyFinancialSchema) as any,
     mode: 'onChange',
@@ -64,12 +80,9 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
   const watchedValues = watch();
 
   // Sync form with Redux state when data is restored from localStorage
-  // This handles the case where Redux store is rehydrated on page refresh
   const [hasSynced, setHasSynced] = React.useState(false);
 
   useEffect(() => {
-    // Only sync once when formData has actual values (restored from localStorage)
-    // and we haven't synced yet
     if (hasSynced) return;
 
     const hasStoredData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
@@ -104,6 +117,12 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
     helperText: string;
     errorMessage: Record<string, string>;
   }>;
+
+  // Handle monthly income display value
+  const getDisplayValue = useCallback((value: number): string => {
+    if (value === 0) return '';
+    return formatCurrencyInput(value, currencyConfig.code);
+  }, [currencyConfig.code]);
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -222,39 +241,49 @@ const FamilyFinancialForm = forwardRef<FamilyFinancialFormRef, FamilyFinancialFo
           />
         </Grid>
 
-        {/* Monthly Income */}
+        {/* Monthly Income - Currency formatted, no spinner arrows */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Controller
             name="monthlyIncome"
             control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                type="number"
-                label={fields?.monthlyIncome?.label || 'Monthly Income'}
-                placeholder={fields?.monthlyIncome?.placeholder || 'Enter your monthly income'}
-                helperText={fields?.monthlyIncome?.helperText || ''}
-                error={Boolean(errors.monthlyIncome)}
-                required
-                slotProps={{
-                  htmlInput: {
-                    min: 0,
-                    'aria-required': true,
-                    'aria-invalid': Boolean(errors.monthlyIncome),
-                  },
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
-                    ),
-                  },
-                }}
-                onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  field.onChange(isNaN(value) ? 0 : value);
-                }}
-              />
-            )}
+            render={({ field }) => {
+              // Display formatted value (e.g., "78,496,869" for JPY or "78,496,869.00" for USD)
+              const displayValue = getDisplayValue(field.value);
+
+              return (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label={fields?.monthlyIncome?.label || 'Monthly Income'}
+                  placeholder={fields?.monthlyIncome?.placeholder || 'Enter your monthly income'}
+                  helperText={fields?.monthlyIncome?.helperText || `${currencySymbol} symbol shown`}
+                  error={Boolean(errors.monthlyIncome)}
+                  required
+                  value={displayValue}
+                  slotProps={{
+                    htmlInput: {
+                      min: 0,
+                      step: currencyDecimals === 0 ? 1000 : 0.01,
+                      'aria-required': true,
+                      'aria-invalid': Boolean(errors.monthlyIncome),
+                      inputMode: 'numeric',
+                    },
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          {currencySymbol}
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  onChange={(e) => {
+                    const rawValue = e.target.value;
+                    const parsed = parseCurrencyInput(rawValue, currencyConfig.code);
+                    field.onChange(parsed);
+                  }}
+                />
+              );
+            }}
           />
           {errors.monthlyIncome && (
             <FormHelperText error>
