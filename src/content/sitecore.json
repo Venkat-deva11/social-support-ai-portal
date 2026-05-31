@@ -208,7 +208,7 @@
           "financialSituation": {
             "label": "Current Financial Situation",
             "placeholder": "Describe your current financial situation...",
-            "helperText": "Include details about your income, expenses, debts, and any financial difficulties you are facing",
+            "helperText": "Include details about your income any financial difficulties you are facing",
             "errorMessage": {
               "required": "Please describe your current financial situation",
               "minLength": "Description must be at least 50 characters",

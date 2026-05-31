@@ -14,6 +14,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../app/store';
 import type { AIAuthoringField } from '../../services/openai/openaiService';
 
 interface AIAssistanceModalProps {
@@ -46,6 +48,12 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
   const [showEditor, setShowEditor] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Get user data from Redux state for contextual AI assistance
+  const userData = useSelector((state: RootState) => ({
+    personalInfo: state.application.formData.personalInfo,
+    familyFinancialInfo: state.application.formData.familyFinancialInfo,
+  }));
+
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
@@ -67,7 +75,11 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
     // Create abort controller for timeout handling
     abortControllerRef.current = new AbortController();
 
-    const result = await OpenAIService.generateText(field, existingContent);
+    // Pass only familyFinancialInfo from Redux - no stale existingContent
+    const result = await OpenAIService.generateText(
+      field,
+      userData.familyFinancialInfo
+    );
 
     setIsGenerating(false);
 
@@ -78,7 +90,7 @@ const AIAssistanceModal: React.FC<AIAssistanceModalProps> = ({
     } else {
       setError(result.error || t('common.failedToGenerate'));
     }
-  }, [field, existingContent, t]);
+  }, [field, userData.familyFinancialInfo, t]);
 
   const handleCancel = useCallback(() => {
     if (abortControllerRef.current) {
