@@ -60,91 +60,6 @@ npm run build
 npm run preview
 ```
 
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   └── store.ts                 # Redux store configuration
-├── components/
-│   ├── ai/
-│   │   └── AIAssistanceModal.tsx # AI assistance modal component
-│   ├── forms/
-│   │   ├── FamilyFinancialForm.tsx
-│   │   ├── PersonalInfoForm.tsx
-│   │   └── SituationDescriptionsForm.tsx
-│   ├── layout/
-│   │   ├── Footer.tsx
-│   │   └── Header.tsx
-│   └── wizard/
-│       ├── ApplicationStepper.tsx
-│       └── WizardNavigation.tsx
-├── constants/
-│   └── index.ts                 # Application constants
-├── content/
-│   └── sitecore.json            # Sitecore-like content repository
-├── features/
-│   ├── application/
-│   │   └── applicationSlice.ts  # Redux slice for application state
-│   └── ui/
-│       └── uiSlice.ts           # Redux slice for UI state
-├── hooks/
-│   └── useSitecoreContent.ts    # Custom hook for content access
-├── i18n/
-│   └── index.ts                 # i18n configuration
-├── pages/
-│   ├── ApplicationWizard.tsx    # Main wizard page
-│   └── SuccessPage.tsx          # Success page after submission
-├── routes/
-├── services/
-│   ├── api/
-│   │   └── apiService.ts        # API service for submission
-│   └── openai/
-│       └── openaiService.ts     # OpenAI service for AI assistance
-├── theme/
-│   └── index.ts                 # MUI theme configuration
-├── types/
-│   └── index.ts                 # TypeScript type definitions
-└── utils/
-    ├── sitecoreContentHelper.ts # Content helper utility
-    ├── storage.ts               # LocalStorage utility
-    └── validation.ts            # Zod validation schemas
-```
-
-## 🎨 Configuration
-
-### Theme Colors (src/theme/index.ts)
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Primary | `#0052CC` | Buttons, links, headers |
-| Secondary | `#36B37E` | Success states, secondary actions |
-| Background | `#F4F6F8` | Page background |
-| Paper | `#FFFFFF` | Cards, dialogs |
-
-### Form Validation Limits
-
-| Field | Min | Max |
-|-------|-----|-----|
-| Full Name | 3 chars | 100 chars |
-| National ID | 8 chars | 20 chars |
-| Address | 10 chars | - |
-| Textarea (Step 3) | 50 chars | 2000 chars |
-
-## 🌐 Internationalization
-
-The application supports:
-- **English (en)** - Default language
-- **Arabic (ar)** - Full RTL support
-
-To change language, use the language switcher in the header.
-
-### Adding Translations
-
-Translations are managed in `src/content/sitecore.json`:
-- `en.pages` - English content
-- `ar.pages` - Arabic content
-
 ## 🤖 AI Assistance
 
 The AI assistance feature uses OpenAI's GPT model to help applicants write their situation descriptions.
@@ -220,3 +135,18 @@ MIT License
 - React Hook Form for form handling
 - Redux Toolkit for state management
 - OpenAI for AI assistance
+# Environment Variables for Social Support AI Portal
+
+# ============================================
+# OPENAI API CONFIGURATION
+# ============================================
+# Get your API key from: https://platform.openai.com/api-keys
+# The AI assistance feature will be disabled if this is not set.
+
+VITE_OPENAI_API_KEY=sk-your-api-key-here
+
+# Optional: Override the default model (gpt-3.5-turbo, gpt-4, etc.)
+VITE_OPENAI_MODEL=gpt-3.5-turbo
+
+# Optional: Override the API endpoint (useful for proxies/testing)
+VITE_OPENAI_ENDPOINT=https://api.openai.com/v1/chat/completions
