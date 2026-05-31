@@ -1,16 +1,3 @@
-# Social Support AI Portal
-
-A production-ready React application for government social support portal that allows citizens to apply for financial assistance through a multi-step application wizard with AI-assisted writing support.
-
-## 🚀 Features
-
-- **3-Step Application Wizard**: Personal Information → Family & Financial Information → Situation Descriptions
-- **AI Writing Assistance**: OpenAI GPT-powered "Help Me Write" feature for narrative fields
-- **Multi-language Support**: English and Arabic with full RTL support
-- **Auto-save**: Form progress is automatically saved to LocalStorage
-- **Form Validation**: Comprehensive validation using Zod
-- **Accessible**: ARIA labels, keyboard navigation, screen reader support
-- **Responsive Design**: Mobile, tablet, and desktop support
 
 ## 📋 Prerequisites
 
